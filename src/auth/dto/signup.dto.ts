@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
-  IsDateString,
   IsEmpty,
   IsEmail,
   IsNotEmpty,
@@ -8,8 +7,14 @@ import {
   MinLength,
   IsPhoneNumber,
   IsOptional,
+  IsEnum,
 } from 'class-validator';
-import { UserRolesEnum } from '../../users/schemas/user-schema';
+
+export enum UserRolesEnumDto {
+  STUDENT = 'Student',
+  EMPLOYEE = 'employee',
+  EXTERNAL = 'External',
+}
 
 export class SignUpDto {
   @IsNotEmpty()
@@ -28,11 +33,6 @@ export class SignUpDto {
   @ApiProperty({ type: String })
   readonly password: string;
 
-  @IsDateString()
-  @IsNotEmpty()
-  @ApiProperty()
-  readonly birthDate: Date;
-
   @IsNotEmpty()
   @IsPhoneNumber('BR')
   @ApiProperty()
@@ -43,8 +43,18 @@ export class SignUpDto {
   @ApiProperty({ required: false })
   readonly registration?: string;
 
-  @IsEmpty({ message: 'You cannot provide the user role' })
-  readonly userRole?: UserRolesEnum;
+  @IsOptional()
+  @IsString()
+  @ApiProperty({ required: false })
+  readonly siap?: string;
+
+  @IsNotEmpty()
+  @IsEnum(UserRolesEnumDto, {
+    each: true,
+    message: 'Please provide a valid value for user role',
+  })
+  @ApiProperty({ enum: UserRolesEnumDto, required: false })
+  readonly userRoles: UserRolesEnumDto[];
 
   @IsEmpty({ message: 'You cannot provide the isActive status' })
   readonly isActive: boolean;

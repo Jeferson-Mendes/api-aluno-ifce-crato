@@ -4,7 +4,11 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export enum UserRolesEnum {
   ADM = 'Adm',
-  USER = 'User',
+  STUDENT = 'Student',
+  EMPLOYEE = 'employee',
+  EXTERNAL = 'External',
+  REFECTORY_MANAGER = 'Refectory_Manager',
+  MURAL_MANAGER = 'Mural_Manager',
 }
 
 @Schema({
@@ -33,19 +37,19 @@ export class User extends Document {
 
   @Prop()
   @ApiProperty()
-  birthDate: Date;
-
-  @Prop()
-  @ApiProperty()
   phoneNumber: string;
 
   @Prop()
-  @ApiProperty({ enum: UserRolesEnum, default: UserRolesEnum.USER })
-  userRole: UserRolesEnum;
+  @ApiProperty({ enum: UserRolesEnum, default: UserRolesEnum.STUDENT })
+  userRoles: UserRolesEnum[];
 
   @Prop()
   @ApiProperty({ required: false })
   registration?: string;
+
+  @Prop()
+  @ApiProperty({ required: false })
+  siape?: string;
 
   @Prop({ default: true })
   @ApiProperty()
