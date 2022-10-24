@@ -1,5 +1,5 @@
 import { Controller, Get, Param, UseGuards } from '@nestjs/common';
-import { User } from './schemas/user-schema';
+import { User } from './schemas/user.schema';
 import { UsersService } from './users.service';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBasicAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';

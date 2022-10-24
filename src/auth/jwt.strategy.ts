@@ -4,7 +4,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { PassportStrategy } from '@nestjs/passport';
 import { Model, ObjectId } from 'mongoose';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { User } from '../users/schemas/user-schema';
+import { User } from '../users/schemas/user.schema';
 
 type Payload = {
   id: ObjectId;
