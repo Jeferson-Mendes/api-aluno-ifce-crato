@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { ApiProperty } from '@nestjs/swagger';
-import { Document } from 'mongoose';
+import mongoose, { Document } from 'mongoose';
+import { User } from 'src/users/schemas/user.schema';
 
 export enum CommuniqueTypeEnum {
   LECTURE = 'Lecture',
@@ -25,6 +26,10 @@ export class Communique extends Document {
   @Prop()
   @ApiProperty({ enum: CommuniqueTypeEnum })
   category: CommuniqueTypeEnum;
+
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User' })
+  @ApiProperty()
+  author: User;
 
   @Prop()
   @ApiProperty()

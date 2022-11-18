@@ -39,6 +39,7 @@ export class CommuniqueService {
     try {
       const communiqueList = await this.communiqueModel
         .find({ ...queryParams.communiqueCategory })
+        .populate('author', 'name')
         .sort({ createdAt: -1 })
         .limit(resPerPage)
         .skip(skip);
@@ -63,12 +64,18 @@ export class CommuniqueService {
   }
 
   // Create
-  async create(createCommuniqueDto: CreateCommuniqueDto): Promise<Communique> {
-    return await this.communiqueModel.create(createCommuniqueDto);
+  async create(
+    createCommuniqueDto: CreateCommuniqueDto,
+    userId: string,
+  ): Promise<Communique> {
+    return await this.communiqueModel.create({
+      ...createCommuniqueDto,
+      author: userId,
+    });
   }
 
   // Detail
   async detail(communiqueId: string): Promise<Communique> {
-    return await this.communiqueModel.findById(communiqueId);
+    return await this.communiqueModel.findById(communiqueId).populate('author');
   }
 }

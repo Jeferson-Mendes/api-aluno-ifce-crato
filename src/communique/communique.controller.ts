@@ -14,8 +14,9 @@ import { Communique, CommuniqueTypeEnum } from './schemas/communique.schema';
 import { Query as ExpressQuery } from 'express-serve-static-core';
 import { RoleGuard } from 'src/auth/guards/role.guard';
 import { Role } from 'src/auth/decorators/role.decorator';
-import { UserRolesEnum } from 'src/users/schemas/user.schema';
+import { User, UserRolesEnum } from 'src/users/schemas/user.schema';
 import { CreateCommuniqueDto } from './dto/create-communique.dto';
+import { CurrentUserDecorator } from 'src/auth/decorators/current-user.decorator';
 
 @ApiTags('communique')
 @Controller('communique')
@@ -41,12 +42,16 @@ export class CommuniqueController {
         communiqueList: [
           {
             category: 'News',
-            title: 'Notícia teste',
-            contents: 'noticia teste',
+            author: {
+              name: 'Jeferson 2',
+              id: '634f5593412af985891e2822',
+            },
+            title: 'Notícia com autor',
+            contents: 'noticia teste com autor',
             referenceLinks: ['link', 'link', 'link', 'link'],
-            createdAt: '2022-10-24T01:47:00.961Z',
-            updatedAt: '2022-10-24T01:47:00.961Z',
-            id: '6355ee94347f1c0e4a9bec6b',
+            createdAt: '2022-11-18T00:55:32.472Z',
+            updatedAt: '2022-11-18T00:55:32.472Z',
+            id: '6376d804e8379498fbedbec8',
           },
         ],
         currentPage: 1,
@@ -74,8 +79,9 @@ export class CommuniqueController {
   @ApiResponse({ status: 200, type: Communique })
   async create(
     @Body() createCommuniqueDto: CreateCommuniqueDto,
+    @CurrentUserDecorator() user: User,
   ): Promise<Communique> {
-    return await this.communiqueService.create(createCommuniqueDto);
+    return await this.communiqueService.create(createCommuniqueDto, user._id);
   }
 
   // Detail
