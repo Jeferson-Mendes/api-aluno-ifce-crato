@@ -53,7 +53,7 @@ export class SignUpDto {
     each: true,
     message: 'Please provide a valid value for user role',
   })
-  @ApiProperty({ enum: UserRolesEnumDto, required: false })
+  @ApiProperty({ enum: UserRolesEnumDto, required: false, isArray: true })
   readonly userRoles: UserRolesEnumDto[];
 
   @IsEmpty({ message: 'You cannot provide the isActive status' })
