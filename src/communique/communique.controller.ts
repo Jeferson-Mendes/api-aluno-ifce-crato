@@ -6,9 +6,17 @@ import {
   Post,
   Body,
   Param,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { ApiBearerAuth, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { CommuniqueService } from './communique.service';
 import { Communique, CommuniqueTypeEnum } from './schemas/communique.schema';
 import { Query as ExpressQuery } from 'express-serve-static-core';
@@ -17,6 +25,7 @@ import { Role } from 'src/auth/decorators/role.decorator';
 import { User, UserRolesEnum } from 'src/users/schemas/user.schema';
 import { CreateCommuniqueDto } from './dto/create-communique.dto';
 import { CurrentUserDecorator } from 'src/auth/decorators/current-user.decorator';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('communique')
 @Controller('communique')
@@ -75,13 +84,20 @@ export class CommuniqueController {
   @Post()
   @UseGuards(AuthGuard(), RoleGuard)
   @Role(UserRolesEnum.STUDENT)
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
   @ApiBearerAuth()
   @ApiResponse({ status: 200, type: Communique })
   async create(
     @Body() createCommuniqueDto: CreateCommuniqueDto,
     @CurrentUserDecorator() user: User,
+    @UploadedFile() file: Express.Multer.File,
   ): Promise<Communique> {
-    return await this.communiqueService.create(createCommuniqueDto, user._id);
+    return await this.communiqueService.create(
+      createCommuniqueDto,
+      user._id,
+      file,
+    );
   }
 
   // Detail

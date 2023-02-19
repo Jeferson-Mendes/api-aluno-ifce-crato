@@ -4,12 +4,15 @@ import { Model } from 'mongoose';
 import { CreateCommuniqueDto } from './dto/create-communique.dto';
 import { Communique, CommuniqueTypeEnum } from './schemas/communique.schema';
 import { Query } from 'express-serve-static-core';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 
 @Injectable()
 export class CommuniqueService {
   constructor(
     @InjectModel(Communique.name)
     private communiqueModel: Model<Communique>,
+
+    private cloudinaryService: CloudinaryService,
   ) {}
 
   // List
@@ -67,11 +70,23 @@ export class CommuniqueService {
   async create(
     createCommuniqueDto: CreateCommuniqueDto,
     userId: string,
-  ): Promise<Communique> {
-    return await this.communiqueModel.create({
-      ...createCommuniqueDto,
-      author: userId,
-    });
+    file?: Express.Multer.File,
+  ): Promise<Communique | any> {
+    let fileToStorage = null;
+    try {
+      if (file) {
+        fileToStorage = await this.cloudinaryService.uploadImage(file);
+      }
+
+      return await this.communiqueModel.create({
+        ...createCommuniqueDto,
+        author: userId,
+        resource: fileToStorage,
+      });
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException('Erro de servidor.');
+    }
   }
 
   // Detail

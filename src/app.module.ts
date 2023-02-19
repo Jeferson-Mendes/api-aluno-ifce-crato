@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { CommuniqueModule } from './communique/communique.module';
+import { CloudinaryModule } from './cloudinary/cloudinary.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { CommuniqueModule } from './communique/communique.module';
     UsersModule,
     AuthModule,
     CommuniqueModule,
+    CloudinaryModule,
   ],
   controllers: [AppController],
   providers: [AppService],

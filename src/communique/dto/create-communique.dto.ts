@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsEnum } from 'class-validator';
+import { IsNotEmpty, IsString, IsEnum, IsOptional } from 'class-validator';
 import { CommuniqueTypeEnum } from '../schemas/communique.schema';
 
 export class CreateCommuniqueDto {
@@ -27,4 +27,8 @@ export class CreateCommuniqueDto {
   })
   @ApiProperty()
   readonly referenceLinks: string[];
+
+  @IsOptional()
+  @ApiProperty({ required: false })
+  readonly file?: string;
 }

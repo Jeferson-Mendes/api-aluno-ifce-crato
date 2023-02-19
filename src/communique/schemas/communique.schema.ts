@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { ApiProperty } from '@nestjs/swagger';
 import mongoose, { Document } from 'mongoose';
 import { User } from 'src/users/schemas/user.schema';
+import { Resource } from './resource.schema';
 
 export enum CommuniqueTypeEnum {
   LECTURE = 'Lecture',
@@ -42,6 +43,10 @@ export class Communique extends Document {
   @Prop()
   @ApiProperty()
   referenceLinks: string[];
+
+  @Prop()
+  @ApiProperty()
+  resource: Resource;
 }
 
 export const CommuniqueSchema = SchemaFactory.createForClass(Communique);
