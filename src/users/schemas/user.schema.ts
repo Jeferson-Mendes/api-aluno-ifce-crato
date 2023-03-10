@@ -1,15 +1,7 @@
 import { Schema, Prop, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 import { ApiProperty } from '@nestjs/swagger';
-
-export enum UserRolesEnum {
-  ADM = 'Adm',
-  STUDENT = 'Student',
-  EMPLOYEE = 'employee',
-  EXTERNAL = 'External',
-  REFECTORY_MANAGER = 'Refectory_Manager',
-  MURAL_MANAGER = 'Mural_Manager',
-}
+import { RolesEnum, UserType } from 'src/ts/enums';
 
 @Schema({
   timestamps: true,
@@ -40,8 +32,12 @@ export class User extends Document {
   phoneNumber: string;
 
   @Prop()
-  @ApiProperty({ enum: UserRolesEnum, default: UserRolesEnum.STUDENT })
-  userRoles: UserRolesEnum[];
+  @ApiProperty({ enum: RolesEnum })
+  roles: RolesEnum[];
+
+  @Prop()
+  @ApiProperty({ enum: UserType })
+  type: UserType;
 
   @Prop()
   @ApiProperty({ required: false })

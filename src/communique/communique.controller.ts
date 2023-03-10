@@ -22,10 +22,11 @@ import { Communique, CommuniqueTypeEnum } from './schemas/communique.schema';
 import { Query as ExpressQuery } from 'express-serve-static-core';
 import { RoleGuard } from 'src/auth/guards/role.guard';
 import { Role } from 'src/auth/decorators/role.decorator';
-import { User, UserRolesEnum } from 'src/users/schemas/user.schema';
+import { User } from 'src/users/schemas/user.schema';
 import { CreateCommuniqueDto } from './dto/create-communique.dto';
 import { CurrentUserDecorator } from 'src/auth/decorators/current-user.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { RolesEnum } from 'src/ts/enums';
 
 @ApiTags('communique')
 @Controller('communique')
@@ -34,7 +35,6 @@ export class CommuniqueController {
 
   @Get()
   @UseGuards(AuthGuard())
-  // @Role(UserRolesEnum.SUPERUSER)
   @ApiBearerAuth()
   @ApiQuery({ name: 'resPerPage', required: false })
   @ApiQuery({ name: 'page', required: false })
@@ -83,7 +83,7 @@ export class CommuniqueController {
   // Create
   @Post()
   @UseGuards(AuthGuard(), RoleGuard)
-  @Role(UserRolesEnum.STUDENT)
+  @Role(RolesEnum.MURAL_MANAGER)
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
   @ApiBearerAuth()
@@ -103,7 +103,7 @@ export class CommuniqueController {
   // Detail
   @Get('/:communiqueId')
   @UseGuards(AuthGuard(), RoleGuard)
-  @Role(UserRolesEnum.STUDENT)
+  @Role(RolesEnum.MURAL_MANAGER)
   @ApiBearerAuth()
   @ApiResponse({ status: 200, type: Communique })
   async detail(

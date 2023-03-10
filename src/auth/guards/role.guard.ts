@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
-import { UserRolesEnum } from '../../users/schemas/user.schema';
+import { RolesEnum } from 'src/ts/enums';
 
 @Injectable()
 export class RoleGuard implements CanActivate {
@@ -15,7 +15,7 @@ export class RoleGuard implements CanActivate {
   canActivate(
     context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean> {
-    const requiredRoles = this.reflector.get<UserRolesEnum[]>(
+    const requiredRoles = this.reflector.get<RolesEnum[]>(
       'roles',
       context.getHandler(),
     );

@@ -9,12 +9,7 @@ import {
   IsOptional,
   IsEnum,
 } from 'class-validator';
-
-export enum UserRolesEnumDto {
-  STUDENT = 'Student',
-  EMPLOYEE = 'employee',
-  EXTERNAL = 'External',
-}
+import { RolesEnum, UserType } from 'src/ts/enums';
 
 export class SignUpDto {
   @IsNotEmpty()
@@ -48,13 +43,20 @@ export class SignUpDto {
   @ApiProperty({ required: false })
   readonly siap?: string;
 
-  @IsNotEmpty()
-  @IsEnum(UserRolesEnumDto, {
+  @IsOptional()
+  @IsEnum(RolesEnum, {
     each: true,
     message: 'Please provide a valid value for user role',
   })
-  @ApiProperty({ enum: UserRolesEnumDto, required: false, isArray: true })
-  readonly userRoles: UserRolesEnumDto[];
+  @ApiProperty({ enum: RolesEnum, required: false, isArray: true })
+  readonly roles: RolesEnum[];
+
+  @IsNotEmpty()
+  @IsEnum(UserType, {
+    message: 'Please provide a valid value for user type',
+  })
+  @ApiProperty({ enum: UserType, required: true })
+  readonly type: UserType;
 
   @IsEmpty({ message: 'You cannot provide the isActive status' })
   readonly isActive: boolean;
