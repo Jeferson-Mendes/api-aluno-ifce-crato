@@ -1,13 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { ApiProperty } from '@nestjs/swagger';
 import { Document } from 'mongoose';
+import { RefectoryStatusEnum } from 'src/ts/enums';
 import { Menu } from './menu.schema';
-
-export enum RefectoryStatusEnum {
-  OPEN = 'open',
-  CREATED = 'created',
-  CLOSED = 'closed',
-}
 
 @Schema({
   timestamps: true,
