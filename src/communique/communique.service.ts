@@ -5,6 +5,8 @@ import { CreateCommuniqueDto } from './dto/create-communique.dto';
 import { Communique, CommuniqueTypeEnum } from './schemas/communique.schema';
 import { Query } from 'express-serve-static-core';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
+import { mountPaginationAttribute } from 'src/helpers';
+import { PaginationResponseType } from 'src/ts/enums';
 
 @Injectable()
 export class CommuniqueService {
@@ -16,16 +18,8 @@ export class CommuniqueService {
   ) {}
 
   // List
-  async list(query: Query): Promise<{
-    communiqueList: Communique[];
-    resPerPage: number;
-    currentPage: number;
-    totalPages: number;
-    totalItems: number;
-  }> {
-    const resPerPage = Number(query.resPerPage) || 10;
-    const currentPage = Number(query.page) || 1;
-    const skip = resPerPage * (currentPage - 1);
+  async list(query: Query): Promise<PaginationResponseType> {
+    const { currentPage, resPerPage, skip } = mountPaginationAttribute(query);
     const communiqueCategory = query.categories
       ? (query.categories
           .toString()
@@ -54,7 +48,7 @@ export class CommuniqueService {
       const totalPages = Math.ceil(totalCommunique / resPerPage);
 
       return {
-        communiqueList,
+        list: communiqueList,
         currentPage,
         resPerPage,
         totalPages,

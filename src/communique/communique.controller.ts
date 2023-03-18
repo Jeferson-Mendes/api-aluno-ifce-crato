@@ -26,7 +26,7 @@ import { User } from 'src/users/schemas/user.schema';
 import { CreateCommuniqueDto } from './dto/create-communique.dto';
 import { CurrentUserDecorator } from 'src/auth/decorators/current-user.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { RolesEnum } from 'src/ts/enums';
+import { PaginationResponseType, RolesEnum } from 'src/ts/enums';
 
 @ApiTags('communique')
 @Controller('communique')
@@ -48,7 +48,7 @@ export class CommuniqueController {
     status: 200,
     schema: {
       example: {
-        communiqueList: [
+        list: [
           {
             category: 'News',
             author: {
@@ -70,13 +70,7 @@ export class CommuniqueController {
       },
     },
   })
-  async list(@Query() query: ExpressQuery): Promise<{
-    communiqueList: Communique[];
-    resPerPage: number;
-    currentPage: number;
-    totalPages: number;
-    totalItems: number;
-  }> {
+  async list(@Query() query: ExpressQuery): Promise<PaginationResponseType> {
     return await this.communiqueService.list(query);
   }
 
