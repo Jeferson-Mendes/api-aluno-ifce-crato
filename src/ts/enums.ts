@@ -1,3 +1,6 @@
+import { Refectory } from '../refectory/schemas/refectory.schema';
+import { Communique } from '../communique/schemas/communique.schema';
+
 export enum RolesEnum {
   REFECTORY_MANAGER = 'refectory_manager',
   MURAL_MANAGER = 'mural_manager',
@@ -15,6 +18,8 @@ export enum RefectoryStatusEnum {
   CREATED = 'created',
   CLOSED = 'closed',
 }
+
+type listTypes = Communique | Refectory;
 
 export type RefectoryAnswerType = {
   _id: string;
@@ -35,4 +40,18 @@ export type RefectoryAnswerType = {
     dinner: number;
     nightSnack: number;
   }[];
+};
+
+export type PaginationResponseType = {
+  list: listTypes[];
+  resPerPage: number;
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+};
+
+export type PaginationAttributes = {
+  resPerPage: number;
+  currentPage: number;
+  skip: number;
 };
