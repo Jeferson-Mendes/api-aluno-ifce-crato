@@ -1,16 +1,29 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiInternalServerErrorResponse,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { CurrentUserDecorator } from 'src/auth/decorators/current-user.decorator';
 import { Role } from 'src/auth/decorators/role.decorator';
 import { RoleGuard } from '../auth/guards/role.guard';
-import { RefectoryAnswerType, RolesEnum } from '../ts/enums';
+import {
+  PaginationResponseType,
+  RefectoryAnswerType,
+  RefectoryStatusEnum,
+  RolesEnum,
+} from '../ts/enums';
 import { User } from '../users/schemas/user.schema';
 import { CreateRefectoryAnswerDto } from './dto/create-refectory-answer.dto';
 import { CreateRefectoryDto } from './dto/create-refectory.dto';
 import { RefectoryService } from './refectory.service';
 import { RefectoryAnswer } from './schemas/refectory-answer.schema';
 import { Refectory } from './schemas/refectory.schema';
+import { Query as ExpressQuery } from 'express-serve-static-core';
 
 @ApiTags('refectory')
 @Controller('refectory')
@@ -68,11 +81,69 @@ export class RefectoryController {
     return await this.refectoryService.getAnswers();
   }
 
-  // Create refectory
-  @Post('create')
+  @Get()
   @UseGuards(AuthGuard())
   @ApiBearerAuth()
+  @ApiQuery({ name: 'resPerPage', required: false })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({
+    name: 'vigencyDate',
+    required: false,
+    example: '2023-03-23',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: RefectoryStatusEnum,
+  })
+  @ApiResponse({
+    status: 200,
+    schema: {
+      example: {
+        list: [
+          {
+            status: 'created',
+            vigencyDate: '2023-03-10T00:00:00.000Z',
+            closingDate: '2023-03-06T00:00:00.000Z',
+            startAnswersDate: '2023-03-06T00:00:00.000Z',
+            menu: {
+              breakfast: 'Bolo de cenoura com café ou suco de goiaba',
+              lunch: 'Lasanha',
+              afternoonSnack: 'Bolo de cenoura',
+              dinner: 'Lasanha',
+              nightSnack: 'Bolacha com suco de uva',
+            },
+            createdAt: '2023-03-10T00:29:46.297Z',
+            updatedAt: '2023-03-10T00:29:46.297Z',
+            id: '640a79fa3cd838f0378c39a8',
+          },
+        ],
+        currentPage: 1,
+        resPerPage: 10,
+        totalPages: 1,
+        totalItems: 1,
+      },
+    },
+  })
+  async list(@Query() query: ExpressQuery): Promise<PaginationResponseType> {
+    return await this.refectoryService.listRefectory(query);
+  }
+
+  // Create refectory
+  @Post('create')
+  @UseGuards(AuthGuard(), RoleGuard)
+  @Role(RolesEnum.REFECTORY_MANAGER)
+  @ApiBearerAuth()
   @ApiResponse({ status: 200, type: Refectory })
+  @ApiBadRequestResponse({
+    status: 400,
+    description: 'The provided vigency date is invalid',
+  })
+  @ApiBadRequestResponse({
+    status: 400,
+    description: 'Invalid dates',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error.' })
   async create(
     @Body() createRefectoryDto: CreateRefectoryDto,
   ): Promise<Refectory> {
@@ -81,7 +152,8 @@ export class RefectoryController {
 
   // Create refectory answer
   @Post('create/answer')
-  @UseGuards(AuthGuard())
+  @UseGuards(AuthGuard(), RoleGuard)
+  @Role(RolesEnum.REFECTORY_MANAGER)
   @ApiBearerAuth()
   @ApiResponse({ status: 200, type: RefectoryAnswer })
   async createAnswer(

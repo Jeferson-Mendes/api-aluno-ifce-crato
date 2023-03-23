@@ -1,13 +1,19 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose from 'mongoose';
+import { mountPaginationAttribute } from 'src/helpers';
 import ServerError from 'src/shared/errors/ServerError';
-import { RefectoryAnswerType, RefectoryStatusEnum } from 'src/ts/enums';
+import {
+  PaginationResponseType,
+  RefectoryAnswerType,
+  RefectoryStatusEnum,
+} from 'src/ts/enums';
 import { User } from '../users/schemas/user.schema';
 import { CreateRefectoryAnswerDto } from './dto/create-refectory-answer.dto';
 import { CreateRefectoryDto } from './dto/create-refectory.dto';
 import { RefectoryAnswer } from './schemas/refectory-answer.schema';
 import { Refectory } from './schemas/refectory.schema';
+import { Query } from 'express-serve-static-core';
 
 @Injectable()
 export class RefectoryService {
@@ -23,6 +29,58 @@ export class RefectoryService {
   async getCurrentRefectory(): Promise<Refectory> {
     try {
       return await this.refectoryModel.findOne({ status: 'open' });
+    } catch (error) {
+      console.log(error);
+      throw new ServerError();
+    }
+  }
+
+  async listRefectory(query: Query): Promise<PaginationResponseType> {
+    const { currentPage, resPerPage, skip } = mountPaginationAttribute(query);
+    const { vigencyDate, status } = query;
+
+    const refectoryDateSearch = vigencyDate
+      ? vigencyDate.toString().replace(/\s/g, '')
+      : undefined;
+
+    const statusToSearch = status
+      ? status.toString().replace(/\s/g, '')
+      : undefined;
+
+    const queryParams = {
+      vigencyDate: refectoryDateSearch
+        ? { vigencyDate: refectoryDateSearch }
+        : {},
+      status: statusToSearch
+        ? { status: { $in: [statusToSearch] } }
+        : { status: { $ne: RefectoryStatusEnum.CLOSED } },
+    };
+
+    try {
+      const refectories = await this.refectoryModel
+        .find({
+          ...queryParams.vigencyDate,
+          ...queryParams.status,
+        })
+        .limit(resPerPage)
+        .skip(skip);
+
+      const totalRefectories = await this.refectoryModel
+        .find({
+          ...queryParams.vigencyDate,
+          ...queryParams.status,
+        })
+        .count();
+
+      const totalPages = Math.ceil(totalRefectories / resPerPage);
+
+      return {
+        list: refectories,
+        currentPage,
+        resPerPage,
+        totalPages,
+        totalItems: totalRefectories,
+      };
     } catch (error) {
       console.log(error);
       throw new ServerError();
