@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { UploadApiResponse, v2 } from 'cloudinary';
+import { UploadApiResponse, v2, DeleteApiResponse } from 'cloudinary';
 import { mkdtempSync, rmSync, writeFileSync } from 'fs';
 // import { CloudinaryProvider } from './cloudinary.provider';
 
@@ -29,5 +29,19 @@ export class CloudinaryService {
       },
     );
     return uploadResut;
+  }
+
+  async deleteImage(
+    id: string,
+  ): Promise<DeleteApiResponse | BadRequestException> {
+    const response = await v2.uploader.destroy(id, (err) => {
+      if (err) {
+        console.log(err);
+        throw new BadRequestException(
+          `Someting wrong when destroy image. ${err}`,
+        );
+      }
+    });
+    return response;
   }
 }
