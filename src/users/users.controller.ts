@@ -1,17 +1,65 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { User } from './schemas/user.schema';
 import { UsersService } from './users.service';
 import { AuthGuard } from '@nestjs/passport';
-import { ApiBasicAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOkResponse,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+import { Query as ExpressQuery } from 'express-serve-static-core';
+import { PaginationResponseType } from 'src/ts/enums';
 
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
   constructor(private userService: UsersService) {}
 
+  @Get()
+  @UseGuards(AuthGuard())
+  @ApiBearerAuth()
+  @ApiQuery({ name: 'resPerPage', required: false })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({
+    name: 'keyword',
+    required: false,
+    description:
+      'Atributo considerado para buscar usuários por nome, matrícula ou siap.',
+  })
+  @ApiResponse({
+    status: 200,
+    schema: {
+      example: {
+        list: [
+          {
+            name: 'Any new User 2',
+            email: 'any_user_2@email.com',
+            phoneNumber: '88999999999',
+            roles: ['mural_manager', 'refectory_manager'],
+            type: 'student',
+            registration: '20182087504232',
+            isActive: true,
+            createdAt: '2023-03-10T00:29:02.402Z',
+            updatedAt: '2023-03-10T00:29:02.402Z',
+            id: '640a79ce3cd838f0378c39a0',
+          },
+        ],
+        currentPage: 1,
+        resPerPage: 10,
+        totalPages: 1,
+        totalItems: 1,
+      },
+    },
+  })
+  async find(@Query() query: ExpressQuery): Promise<PaginationResponseType> {
+    return await this.userService.find(query);
+  }
+
   @Get('/:userId')
   @UseGuards(AuthGuard())
-  @ApiBasicAuth()
+  @ApiBearerAuth()
   @ApiOkResponse({ status: 200, type: User })
   async detail(@Param('userId') userId: string): Promise<User> {
     return await this.userService.detail(userId);

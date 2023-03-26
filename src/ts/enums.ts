@@ -1,5 +1,6 @@
 import { Refectory } from '../refectory/schemas/refectory.schema';
 import { Communique } from '../communique/schemas/communique.schema';
+import { User } from '../users/schemas/user.schema';
 
 export enum RolesEnum {
   REFECTORY_MANAGER = 'refectory_manager',
@@ -19,7 +20,7 @@ export enum RefectoryStatusEnum {
   CLOSED = 'closed',
 }
 
-type listTypes = Communique | Refectory;
+type listTypes = Communique | Refectory | User;
 
 export type RefectoryAnswerType = {
   _id: string;
