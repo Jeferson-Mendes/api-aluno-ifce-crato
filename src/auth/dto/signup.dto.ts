@@ -28,10 +28,10 @@ export class SignUpDto {
   @ApiProperty({ type: String })
   readonly password: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsPhoneNumber('BR')
   @ApiProperty()
-  readonly phoneNumber: string;
+  readonly phoneNumber?: string;
 
   @IsOptional()
   @IsString()

@@ -28,8 +28,8 @@ export class User extends Document {
   password: string;
 
   @Prop()
-  @ApiProperty()
-  phoneNumber: string;
+  @ApiProperty({ required: false })
+  phoneNumber?: string;
 
   @Prop()
   @ApiProperty({ enum: RolesEnum })
