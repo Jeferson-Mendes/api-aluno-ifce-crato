@@ -41,8 +41,8 @@ export class Communique extends Document {
   contents: string;
 
   @Prop()
-  @ApiProperty()
-  referenceLinks: string[];
+  @ApiProperty({ required: false })
+  referenceLinks?: string[];
 
   @Prop()
   @ApiProperty()

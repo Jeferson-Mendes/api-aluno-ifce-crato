@@ -21,11 +21,11 @@ export class CreateCommuniqueDto {
   @ApiProperty({ type: String })
   readonly contents: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString({
     each: true,
   })
-  @ApiProperty()
+  @ApiProperty({ required: false })
   readonly referenceLinks: string[];
 
   @IsOptional()

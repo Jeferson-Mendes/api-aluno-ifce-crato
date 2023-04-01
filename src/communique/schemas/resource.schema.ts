@@ -8,8 +8,10 @@ export class Resource {
   public secure_url!: string;
 
   @Prop({ select: false })
-  // @ApiProperty()
   public asset_id: string;
+
+  @Prop({ select: false })
+  public public_id: string;
 
   @Prop()
   @ApiProperty()
