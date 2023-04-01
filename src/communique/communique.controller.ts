@@ -8,6 +8,8 @@ import {
   Param,
   UseInterceptors,
   UploadedFile,
+  Delete,
+  HttpCode,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import {
@@ -104,5 +106,15 @@ export class CommuniqueController {
     @Param('communiqueId') communiqueId: string,
   ): Promise<Communique> {
     return await this.communiqueService.detail(communiqueId);
+  }
+
+  @Delete('/:communiqueId')
+  @UseGuards(AuthGuard(), RoleGuard)
+  @Role(RolesEnum.MURAL_MANAGER)
+  @HttpCode(204)
+  @ApiBearerAuth()
+  @ApiResponse({ status: 204 })
+  async delete(@Param('communiqueId') communiqueId: string): Promise<void> {
+    return await this.communiqueService.delete(communiqueId);
   }
 }

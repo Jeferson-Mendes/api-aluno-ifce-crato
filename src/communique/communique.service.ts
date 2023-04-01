@@ -1,4 +1,8 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CreateCommuniqueDto } from './dto/create-communique.dto';
@@ -86,5 +90,25 @@ export class CommuniqueService {
   // Detail
   async detail(communiqueId: string): Promise<Communique> {
     return await this.communiqueModel.findById(communiqueId).populate('author');
+  }
+
+  async delete(communiqueId: string): Promise<void> {
+    const communique = await this.communiqueModel
+      .findById(communiqueId)
+      .select('+resource.public_id');
+    if (!communique) {
+      throw new NotFoundException('Communique not found.');
+    }
+
+    try {
+      if (communique.resource) {
+        await this.cloudinaryService.deleteImage(communique.resource.public_id);
+      }
+      await this.communiqueModel.findByIdAndDelete(communiqueId);
+      return;
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException('Erro de servidor.');
+    }
   }
 }
