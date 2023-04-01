@@ -30,7 +30,7 @@ export class SignUpDto {
 
   @IsOptional()
   @IsPhoneNumber('BR')
-  @ApiProperty()
+  @ApiProperty({ required: false })
   readonly phoneNumber?: string;
 
   @IsOptional()
