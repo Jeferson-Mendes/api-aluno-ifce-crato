@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose from 'mongoose';
 import { mountPaginationAttribute } from 'src/helpers';
@@ -9,11 +14,15 @@ import {
   RefectoryStatusEnum,
 } from 'src/ts/enums';
 import { User } from '../users/schemas/user.schema';
-import { CreateRefectoryAnswerDto } from './dto/create-refectory-answer.dto';
-import { CreateRefectoryDto } from './dto/create-refectory.dto';
+import {
+  CreateRefectoryDto,
+  CreateRefectoryAnswerDto,
+  UpdateRefectoryDto,
+} from './dto';
 import { RefectoryAnswer } from './schemas/refectory-answer.schema';
 import { Refectory } from './schemas/refectory.schema';
 import { Query } from 'express-serve-static-core';
+import { isAfter, isBefore } from 'date-fns';
 
 @Injectable()
 export class RefectoryService {
@@ -235,6 +244,120 @@ export class RefectoryService {
       });
 
       return answer;
+    } catch (error) {
+      console.log(error);
+      throw new ServerError();
+    }
+  }
+
+  convert(originalValue: any, newValue: any): any {
+    if (newValue === undefined) return originalValue;
+    if (newValue === null) return null;
+    if (newValue.trim() === '') return null;
+    return newValue;
+  }
+
+  handleDates(
+    closingDate: Date,
+    vigencyDate: Date,
+    startAnswersDate: Date,
+  ): boolean {
+    const closing =
+      isBefore(new Date(closingDate), new Date()) ||
+      isAfter(new Date(closingDate), new Date(vigencyDate));
+    const startAnswer = isAfter(new Date(startAnswersDate), new Date());
+
+    if (closing || startAnswer) return false;
+    return true;
+  }
+
+  async update(
+    refectoryId: string,
+    updateRefectoryDto: UpdateRefectoryDto,
+  ): Promise<{ refectoryId: string }> {
+    const refectoryRecord = await this.refectoryModel.findOne({
+      _id: refectoryId,
+    });
+
+    if (!refectoryRecord) {
+      throw new NotFoundException('Refectory not found.');
+    }
+
+    if (refectoryRecord.status === RefectoryStatusEnum.OPEN) {
+      throw new ForbiddenException('This refectory already is open.');
+    }
+
+    const refectoryWithVigencyDate = await this.refectoryModel.findOne({
+      vigencyDate: { $eq: updateRefectoryDto.vigencyDate },
+    });
+
+    if (refectoryWithVigencyDate) {
+      throw new BadRequestException('The provided vigency date is invalid.');
+    }
+
+    if (
+      !this.handleDates(
+        this.convert(
+          refectoryRecord.closingDate,
+          updateRefectoryDto.closingDate,
+        ),
+        this.convert(
+          refectoryRecord.vigencyDate,
+          updateRefectoryDto.vigencyDate,
+        ),
+        this.convert(
+          refectoryRecord.startAnswersDate,
+          updateRefectoryDto.startAnswersDate,
+        ),
+      )
+    ) {
+      throw new BadRequestException('Invalid dates');
+    }
+
+    const data = {
+      vigencyDate: this.convert(
+        refectoryRecord.vigencyDate,
+        updateRefectoryDto.vigencyDate,
+      ),
+      closingDate: this.convert(
+        refectoryRecord.closingDate,
+        updateRefectoryDto.closingDate,
+      ),
+      startAnswersDate: this.convert(
+        refectoryRecord.startAnswersDate,
+        updateRefectoryDto.startAnswersDate,
+      ),
+      menu: {
+        breakfast: this.convert(
+          refectoryRecord.menu?.breakfast,
+          updateRefectoryDto?.menu?.breakfast,
+        ),
+        lunch: this.convert(
+          refectoryRecord.menu?.lunch,
+          updateRefectoryDto?.menu?.lunch,
+        ),
+        afternoonSnack: this.convert(
+          refectoryRecord.menu.afternoonSnack,
+          updateRefectoryDto?.menu?.afternoonSnack,
+        ),
+        dinner: this.convert(
+          refectoryRecord.menu?.dinner,
+          updateRefectoryDto?.menu?.dinner,
+        ),
+        nightSnack: this.convert(
+          refectoryRecord.menu?.nightSnack,
+          updateRefectoryDto?.menu?.nightSnack,
+        ),
+      },
+    };
+
+    try {
+      await this.refectoryModel.updateOne({ _id: refectoryId }, data, {
+        new: true,
+        runValidators: true,
+      });
+
+      return { refectoryId: refectoryId };
     } catch (error) {
       console.log(error);
       throw new ServerError();
