@@ -11,6 +11,7 @@ async function bootstrap() {
     .setTitle('Aluno Ifce Crato API')
     .setDescription('THE ALUNO IFCE CRATO API DESCRIPTION')
     .setVersion('1.0')
+    .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
