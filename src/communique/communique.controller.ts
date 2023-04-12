@@ -36,8 +36,6 @@ export class CommuniqueController {
   constructor(private communiqueService: CommuniqueService) {}
 
   @Get()
-  @UseGuards(AuthGuard())
-  @ApiBearerAuth()
   @ApiQuery({ name: 'resPerPage', required: false })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({
@@ -98,9 +96,6 @@ export class CommuniqueController {
 
   // Detail
   @Get('/:communiqueId')
-  @UseGuards(AuthGuard(), RoleGuard)
-  @Role(RolesEnum.MURAL_MANAGER)
-  @ApiBearerAuth()
   @ApiResponse({ status: 200, type: Communique })
   async detail(
     @Param('communiqueId') communiqueId: string,
