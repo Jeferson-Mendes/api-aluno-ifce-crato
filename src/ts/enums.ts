@@ -11,7 +11,6 @@ export enum RolesEnum {
 export enum UserType {
   STUDENT = 'student',
   EMPLOYEE = 'employee',
-  EXTERNAL = 'external',
 }
 
 export enum RefectoryStatusEnum {

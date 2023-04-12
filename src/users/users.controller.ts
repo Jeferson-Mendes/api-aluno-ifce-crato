@@ -1,4 +1,12 @@
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { User } from './schemas/user.schema';
 import { UsersService } from './users.service';
 import { AuthGuard } from '@nestjs/passport';
@@ -11,6 +19,8 @@ import {
 } from '@nestjs/swagger';
 import { Query as ExpressQuery } from 'express-serve-static-core';
 import { PaginationResponseType } from 'src/ts/enums';
+import { CurrentUserDecorator } from 'src/auth/decorators/current-user.decorator';
+import { ApiResponseUpdateUser, UpdateUserDto } from './dto';
 
 @ApiTags('users')
 @Controller('users')
@@ -63,5 +73,17 @@ export class UsersController {
   @ApiOkResponse({ status: 200, type: User })
   async detail(@Param('userId') userId: string): Promise<User> {
     return await this.userService.detail(userId);
+  }
+
+  @Patch()
+  @UseGuards(AuthGuard())
+  @ApiBearerAuth()
+  @ApiOkResponse({ status: 200, type: ApiResponseUpdateUser })
+  async update(
+    @CurrentUserDecorator() user: User,
+    @Body() updateUserDto: UpdateUserDto,
+  ): Promise<{ userId: string }> {
+    console.log(user);
+    return await this.userService.update(user, updateUserDto);
   }
 }

@@ -1,9 +1,20 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
+  ApiForbiddenResponse,
   ApiInternalServerErrorResponse,
+  ApiNotFoundResponse,
   ApiQuery,
   ApiResponse,
   ApiTags,
@@ -18,12 +29,16 @@ import {
   RolesEnum,
 } from '../ts/enums';
 import { User } from '../users/schemas/user.schema';
-import { CreateRefectoryAnswerDto } from './dto/create-refectory-answer.dto';
-import { CreateRefectoryDto } from './dto/create-refectory.dto';
 import { RefectoryService } from './refectory.service';
 import { RefectoryAnswer } from './schemas/refectory-answer.schema';
 import { Refectory } from './schemas/refectory.schema';
 import { Query as ExpressQuery } from 'express-serve-static-core';
+import {
+  UpdateRefectoryDto,
+  CreateRefectoryAnswerDto,
+  CreateRefectoryDto,
+  ApiResponseUpdate,
+} from './dto';
 
 @ApiTags('refectory')
 @Controller('refectory')
@@ -164,5 +179,24 @@ export class RefectoryController {
       createRefectoryAnswerDto,
       user,
     );
+  }
+
+  @Patch('/:refectoryId')
+  @UseGuards(AuthGuard(), RoleGuard)
+  @Role(RolesEnum.REFECTORY_MANAGER)
+  @ApiBearerAuth()
+  @ApiResponse({ status: 200, type: ApiResponseUpdate })
+  @ApiNotFoundResponse({ description: 'Refectory not found.' })
+  @ApiForbiddenResponse({ description: 'This refectory already is open.' })
+  @ApiBadRequestResponse({
+    description: 'The provided vigency date is invalid.',
+  })
+  @ApiBadRequestResponse({ description: 'Invalid dates' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error.' })
+  async update(
+    @Body() updateRefectoryDto: UpdateRefectoryDto,
+    @Param('refectoryId') refectoryId: string,
+  ): Promise<{ refectoryId: string }> {
+    return await this.refectoryService.update(refectoryId, updateRefectoryDto);
   }
 }
