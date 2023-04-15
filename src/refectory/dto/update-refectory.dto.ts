@@ -1,7 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
-  IsDateString,
+  IsEmpty,
+  IsNumber,
   IsObject,
   IsOptional,
   IsString,
@@ -36,20 +37,13 @@ class MenuDto {
 }
 
 export class UpdateRefectoryDto {
-  @IsDateString()
-  @IsOptional()
-  @ApiProperty({ required: false })
-  startAnswersDate: Date;
+  @IsEmpty({ message: 'You cannot provide start answer date' })
+  startAnswersDate: number;
 
-  @IsDateString()
+  @IsNumber()
   @IsOptional()
   @ApiProperty({ required: false })
-  closingDate: Date;
-
-  @IsDateString()
-  @IsOptional()
-  @ApiProperty({ required: false })
-  vigencyDate: Date;
+  vigencyDate: number;
 
   @IsOptional()
   @IsObject()

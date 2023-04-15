@@ -17,21 +17,17 @@ import { Menu } from './menu.schema';
   },
 })
 export class Refectory extends Document {
-  @Prop({ default: RefectoryStatusEnum.CREATED })
+  @Prop({ default: RefectoryStatusEnum.scheduled })
   @ApiProperty({ enum: RefectoryStatusEnum })
   status: RefectoryStatusEnum;
 
   @Prop()
   @ApiProperty()
-  vigencyDate: Date;
+  vigencyDate: number;
 
   @Prop()
   @ApiProperty()
-  closingDate: Date;
-
-  @Prop()
-  @ApiProperty()
-  startAnswersDate: Date;
+  startAnswersDate: number;
 
   @Prop({ type: Object })
   @ApiProperty()

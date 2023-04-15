@@ -22,7 +22,7 @@ import {
 import { RefectoryAnswer } from './schemas/refectory-answer.schema';
 import { Refectory } from './schemas/refectory.schema';
 import { Query } from 'express-serve-static-core';
-import { isAfter, isBefore } from 'date-fns';
+import { isAfter, isBefore, subDays } from 'date-fns';
 
 @Injectable()
 export class RefectoryService {
@@ -37,7 +37,18 @@ export class RefectoryService {
   // Get current refectory
   async getCurrentRefectory(): Promise<Refectory> {
     try {
-      return await this.refectoryModel.findOne({ status: 'open' });
+      return await this.refectoryModel.findOne({
+        status: { $in: ['open', 'openToAnswer'] },
+      });
+    } catch (error) {
+      console.log(error);
+      throw new ServerError();
+    }
+  }
+
+  async findById(refectoryId: string): Promise<Refectory> {
+    try {
+      return await this.refectoryModel.findOne({ _id: refectoryId });
     } catch (error) {
       console.log(error);
       throw new ServerError();
@@ -48,8 +59,12 @@ export class RefectoryService {
     const { currentPage, resPerPage, skip } = mountPaginationAttribute(query);
     const { vigencyDate, status } = query;
 
+    const vigencyDateMilliseconds = new Date(
+      vigencyDate.toString().replace(/\s/g, ''),
+    ).getTime();
+
     const refectoryDateSearch = vigencyDate
-      ? vigencyDate.toString().replace(/\s/g, '')
+      ? vigencyDateMilliseconds
       : undefined;
 
     const statusToSearch = status
@@ -62,7 +77,7 @@ export class RefectoryService {
         : {},
       status: statusToSearch
         ? { status: { $in: [statusToSearch] } }
-        : { status: { $ne: RefectoryStatusEnum.CLOSED } },
+        : { status: { $ne: RefectoryStatusEnum.closed } },
     };
 
     try {
@@ -187,26 +202,33 @@ export class RefectoryService {
   async createRefectory(
     createRefectoryDto: CreateRefectoryDto,
   ): Promise<Refectory> {
-    // check already has open refectory
-    const hasRefectory = await this.refectoryModel.findOne({
-      vigencyDate: { $gte: createRefectoryDto.vigencyDate },
+    const data: any = {
+      menu: createRefectoryDto.menu,
+      vigencyDate: createRefectoryDto.vigencyDate,
+      startAnswersDate: subDays(createRefectoryDto.vigencyDate, 1).getTime(),
+    };
+
+    const recordRefectory = await this.refectoryModel.findOne({
+      vigencyDate: { $eq: createRefectoryDto.vigencyDate },
     });
 
-    if (hasRefectory) {
+    const compareDate = isAfter(new Date().getTime(), data.vigencyDate);
+
+    const compareStartAnswerDate = isAfter(
+      new Date().getTime(),
+      data.startAnswersDate,
+    );
+
+    if (recordRefectory || compareDate) {
       throw new BadRequestException('The provided vigency date is invalid');
     }
 
-    if (
-      createRefectoryDto.closingDate < new Date() ||
-      createRefectoryDto.closingDate > createRefectoryDto.vigencyDate
-    ) {
-      throw new BadRequestException('Invalid dates');
+    if (compareStartAnswerDate) {
+      data.status = RefectoryStatusEnum.openToAnswer;
     }
 
     try {
-      const createdRefectory = await this.refectoryModel.create(
-        createRefectoryDto,
-      );
+      const createdRefectory = await this.refectoryModel.create(data);
       return createdRefectory;
     } catch (error) {
       console.log(error);
@@ -218,19 +240,20 @@ export class RefectoryService {
   async createRefectoryAnswer(
     createRefectoryAnswerDto: CreateRefectoryAnswerDto,
     user: User,
+    refectoryId: string,
   ): Promise<RefectoryAnswer> {
     const isValidRefectory = await this.refectoryModel.findOne({
-      _id: createRefectoryAnswerDto.refectory,
-      status: RefectoryStatusEnum.OPEN,
+      _id: refectoryId,
+      status: RefectoryStatusEnum.open,
     });
 
     if (!isValidRefectory) {
-      throw new BadRequestException('This refectory do not acept answers.');
+      throw new BadRequestException('This refectory do not accept answers.');
     }
 
     const userAlreadyAnswered = await this.refectoryAnswerModel.findOne({
       user: user.id,
-      refectory: createRefectoryAnswerDto.refectory,
+      refectory: refectoryId,
     });
 
     if (userAlreadyAnswered) {
@@ -265,7 +288,9 @@ export class RefectoryService {
     const closing =
       isBefore(new Date(closingDate), new Date()) ||
       isAfter(new Date(closingDate), new Date(vigencyDate));
-    const startAnswer = isAfter(new Date(startAnswersDate), new Date());
+    const startAnswer =
+      isBefore(new Date(startAnswersDate), new Date()) ||
+      isAfter(new Date(startAnswersDate), new Date(closingDate));
 
     if (closing || startAnswer) return false;
     return true;
@@ -283,7 +308,7 @@ export class RefectoryService {
       throw new NotFoundException('Refectory not found.');
     }
 
-    if (refectoryRecord.status === RefectoryStatusEnum.OPEN) {
+    if (refectoryRecord.status === RefectoryStatusEnum.open) {
       throw new ForbiddenException('This refectory already is open.');
     }
 
@@ -291,42 +316,28 @@ export class RefectoryService {
       vigencyDate: { $eq: updateRefectoryDto.vigencyDate },
     });
 
-    if (refectoryWithVigencyDate) {
+    const compareDate = isAfter(
+      new Date().getTime(),
+      updateRefectoryDto.vigencyDate,
+    );
+
+    if (refectoryWithVigencyDate || compareDate) {
       throw new BadRequestException('The provided vigency date is invalid.');
     }
 
-    if (
-      !this.handleDates(
-        this.convert(
-          refectoryRecord.closingDate,
-          updateRefectoryDto.closingDate,
-        ),
-        this.convert(
-          refectoryRecord.vigencyDate,
-          updateRefectoryDto.vigencyDate,
-        ),
-        this.convert(
-          refectoryRecord.startAnswersDate,
-          updateRefectoryDto.startAnswersDate,
-        ),
-      )
-    ) {
-      throw new BadRequestException('Invalid dates');
-    }
+    const vigencyDate = this.convert(
+      refectoryRecord.vigencyDate,
+      updateRefectoryDto.vigencyDate,
+    );
 
-    const data = {
-      vigencyDate: this.convert(
-        refectoryRecord.vigencyDate,
-        updateRefectoryDto.vigencyDate,
-      ),
-      closingDate: this.convert(
-        refectoryRecord.closingDate,
-        updateRefectoryDto.closingDate,
-      ),
-      startAnswersDate: this.convert(
-        refectoryRecord.startAnswersDate,
-        updateRefectoryDto.startAnswersDate,
-      ),
+    const startAnswersDate = vigencyDate
+      ? (updateRefectoryDto.startAnswersDate = subDays(
+          vigencyDate,
+          1,
+        ).getTime())
+      : null;
+
+    const menuData = {
       menu: {
         breakfast: this.convert(
           refectoryRecord.menu?.breakfast,
@@ -352,10 +363,14 @@ export class RefectoryService {
     };
 
     try {
-      await this.refectoryModel.updateOne({ _id: refectoryId }, data, {
-        new: true,
-        runValidators: true,
-      });
+      await this.refectoryModel.updateOne(
+        { _id: refectoryId },
+        { ...menuData, vigencyDate, startAnswersDate },
+        {
+          new: true,
+          runValidators: true,
+        },
+      );
 
       return { refectoryId: refectoryId };
     } catch (error) {

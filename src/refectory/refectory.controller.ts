@@ -53,6 +53,16 @@ export class RefectoryController {
     return await this.refectoryService.getCurrentRefectory();
   }
 
+  @Get('/:refectoryId')
+  @UseGuards(AuthGuard())
+  @ApiBearerAuth()
+  @ApiResponse({ status: 200, type: Refectory })
+  async findById(
+    @Param('refectoryId') refectoryId: string,
+  ): Promise<Refectory> {
+    return await this.refectoryService.findById(refectoryId);
+  }
+
   @Get('current-refectory/answers')
   @UseGuards(AuthGuard(), RoleGuard)
   @Role(RolesEnum.REFECTORY_MANAGER)
@@ -166,18 +176,20 @@ export class RefectoryController {
   }
 
   // Create refectory answer
-  @Post('create/answer')
+  @Post('create/answer/:refectoryId')
   @UseGuards(AuthGuard(), RoleGuard)
   @Role(RolesEnum.REFECTORY_MANAGER)
   @ApiBearerAuth()
   @ApiResponse({ status: 200, type: RefectoryAnswer })
   async createAnswer(
+    @Param('refectoryId') refectoryId: string,
     @Body() createRefectoryAnswerDto: CreateRefectoryAnswerDto,
     @CurrentUserDecorator() user: User,
   ): Promise<RefectoryAnswer> {
     return await this.refectoryService.createRefectoryAnswer(
       createRefectoryAnswerDto,
       user,
+      refectoryId,
     );
   }
 
