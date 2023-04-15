@@ -8,6 +8,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { CommuniqueModule } from './communique/communique.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { RefectoryModule } from './refectory/refectory.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { RefectoryModule } from './refectory/refectory.module';
     CommuniqueModule,
     CloudinaryModule,
     RefectoryModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],
