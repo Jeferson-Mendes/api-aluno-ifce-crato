@@ -47,7 +47,10 @@ export class User extends Document {
   @ApiProperty({ required: false })
   siape?: string;
 
-  @Prop({ default: true })
+  @Prop({ select: false })
+  emailCode: string;
+
+  @Prop({ default: false })
   @ApiProperty()
   isActive: boolean;
 }

@@ -4,6 +4,7 @@ import { User } from '../users/schemas/user.schema';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { SignUpDto } from './dto/signup.dto';
+import { ConfirmEmailCodeDto, ResendEmailConfirmationCodeDto } from './dto';
 
 @ApiTags('users')
 @Controller('auth')
@@ -19,6 +20,24 @@ export class AuthController {
   })
   async signUp(@Body() signUpDto: SignUpDto): Promise<User> {
     return await this.authService.signUp(signUpDto);
+  }
+
+  @Post('confirm/email-code')
+  @HttpCode(200)
+  async confirmEmailCode(
+    @Body() confirmEmailCodeDto: ConfirmEmailCodeDto,
+  ): Promise<{ user: User; token: string }> {
+    return this.authService.confirmEmailCode(confirmEmailCodeDto);
+  }
+
+  @Post('resend/email-code')
+  @HttpCode(204)
+  async resendEmailCode(
+    @Body() resendEmailConfirmationCodeDto: ResendEmailConfirmationCodeDto,
+  ): Promise<void> {
+    return this.authService.resendEmailConfirmationCode(
+      resendEmailConfirmationCodeDto,
+    );
   }
 
   @Post('/login')
@@ -44,6 +63,7 @@ export class AuthController {
       },
     },
   })
+  @HttpCode(200)
   async login(
     @Body() loginDto: LoginDto,
   ): Promise<{ user: User; token: string }> {
