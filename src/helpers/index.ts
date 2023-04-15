@@ -14,3 +14,8 @@ export const mountPaginationAttribute = (
     skip,
   };
 };
+
+export const generateCode = (): string => {
+  const codigo = Math.floor(Math.random() * 9000) + 1000;
+  return codigo.toString();
+};
