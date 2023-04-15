@@ -1,13 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsMongoId, IsNumber, Min, Max } from 'class-validator';
-import { ObjectId } from 'mongoose';
+import { IsNotEmpty, IsNumber, Min, Max } from 'class-validator';
 
 export class CreateRefectoryAnswerDto {
-  @IsNotEmpty()
-  @IsMongoId()
-  @ApiProperty()
-  refectory: ObjectId;
-
   @IsNumber()
   @IsNotEmpty()
   @Min(0)

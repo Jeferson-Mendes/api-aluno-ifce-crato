@@ -14,9 +14,10 @@ export enum UserType {
 }
 
 export enum RefectoryStatusEnum {
-  OPEN = 'open',
-  CREATED = 'created',
-  CLOSED = 'closed',
+  open = 'open',
+  openToAnswer = 'openToAnswer',
+  scheduled = 'scheduled',
+  closed = 'closed',
 }
 
 type listTypes = Communique | Refectory | User;

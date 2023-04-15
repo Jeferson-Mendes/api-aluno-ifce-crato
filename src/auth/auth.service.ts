@@ -141,6 +141,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid password');
     }
 
+    user.password = undefined;
     if (!user.isActive) {
       throw new HttpException(
         {
