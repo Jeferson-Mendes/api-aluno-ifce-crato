@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, Patch } from '@nestjs/common';
 import {
   ApiCreatedResponse,
   ApiOkResponse,
@@ -9,7 +9,12 @@ import { User } from '../users/schemas/user.schema';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { SignUpDto } from './dto/signup.dto';
-import { ConfirmEmailCodeDto, ResendEmailConfirmationCodeDto } from './dto';
+import {
+  ConfirmEmailCodeDto,
+  ResendEmailConfirmationCodeDto,
+  ResetPassDto,
+  SendForgotPassDto,
+} from './dto';
 
 @ApiTags('users')
 @Controller('auth')
@@ -93,5 +98,20 @@ export class AuthController {
     @Body() loginDto: LoginDto,
   ): Promise<{ user: User; token: string }> {
     return await this.authService.login(loginDto);
+  }
+
+  @Post('forgot-password')
+  @HttpCode(200)
+  async sendForgotPassword(
+    @Body() sendForgotPassword: SendForgotPassDto,
+  ): Promise<void> {
+    await this.authService.sendForgotPasswordEmail(sendForgotPassword.email);
+    return;
+  }
+
+  @Patch('reset-password')
+  @HttpCode(200)
+  async resetPassword(@Body() resetPassDto: ResetPassDto): Promise<User> {
+    return await this.authService.resetPassword(resetPassDto);
   }
 }
