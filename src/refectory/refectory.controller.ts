@@ -164,10 +164,6 @@ export class RefectoryController {
     status: 400,
     description: 'The provided vigency date is invalid',
   })
-  @ApiBadRequestResponse({
-    status: 400,
-    description: 'Invalid dates',
-  })
   @ApiInternalServerErrorResponse({ description: 'Internal server error.' })
   async create(
     @Body() createRefectoryDto: CreateRefectoryDto,
