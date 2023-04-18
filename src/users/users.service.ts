@@ -2,6 +2,7 @@ import {
   Injectable,
   BadRequestException,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { isValidObjectId, Model } from 'mongoose';
@@ -11,6 +12,7 @@ import { User } from './schemas/user.schema';
 import { Query } from 'express-serve-static-core';
 import { UpdateUserDto, UpdateUserRolesDto } from './dto';
 import ServerError from '../shared/errors/ServerError';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class UsersService {
@@ -114,5 +116,47 @@ export class UsersService {
       console.log(error);
       throw new ServerError();
     }
+  }
+
+  async updatePassword(
+    currentPassword: string,
+    newPassword: string,
+    userId: string,
+  ): Promise<User> {
+    const isValidId = isValidObjectId(userId);
+
+    if (!isValidId) {
+      throw new BadRequestException('Invalid userId');
+    }
+
+    const userExists = await this.userModel
+      .findById(userId)
+      .select('+password');
+
+    if (!userExists) {
+      throw new NotFoundException('User not found.');
+    }
+
+    const confirmPassword = await bcrypt.compare(
+      currentPassword,
+      userExists.password,
+    );
+
+    if (!confirmPassword) {
+      throw new UnauthorizedException('Invalid current password');
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+
+    return await this.userModel.findByIdAndUpdate(
+      userId,
+      {
+        password: passwordHash,
+      },
+      {
+        new: true,
+        runValidators: true,
+      },
+    );
   }
 }
