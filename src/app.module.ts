@@ -9,6 +9,8 @@ import { CommuniqueModule } from './communique/communique.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { RefectoryModule } from './refectory/refectory.module';
 import { MailModule } from './mail/mail.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { CronModule } from './cron/cron.module';
 
 @Module({
   imports: [
@@ -23,6 +25,8 @@ import { MailModule } from './mail/mail.module';
     CloudinaryModule,
     RefectoryModule,
     MailModule,
+    ScheduleModule.forRoot(),
+    CronModule,
   ],
   controllers: [AppController],
   providers: [AppService],
