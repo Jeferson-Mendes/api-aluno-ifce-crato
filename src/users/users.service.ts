@@ -9,7 +9,7 @@ import { mountPaginationAttribute } from 'src/helpers';
 import { PaginationResponseType } from 'src/ts/enums';
 import { User } from './schemas/user.schema';
 import { Query } from 'express-serve-static-core';
-import { UpdateUserDto } from './dto';
+import { UpdateUserDto, UpdateUserRolesDto } from './dto';
 import ServerError from '../shared/errors/ServerError';
 
 @Injectable()
@@ -91,6 +91,25 @@ export class UsersService {
       await this.userModel.updateOne({ _id: user._id }, updateUserDto);
 
       return { userId: user._id };
+    } catch (error) {
+      console.log(error);
+      throw new ServerError();
+    }
+  }
+
+  async updateRoles(
+    userId: string,
+    updateUserRolesDto: UpdateUserRolesDto,
+  ): Promise<{ userId: string }> {
+    const { roles } = updateUserRolesDto;
+    const recordUser = await this.userModel.findOne({ _id: userId });
+    if (!recordUser) {
+      throw new NotFoundException('User not found.');
+    }
+
+    try {
+      await this.userModel.updateOne({ _id: userId }, { roles });
+      return { userId };
     } catch (error) {
       console.log(error);
       throw new ServerError();

@@ -18,9 +18,16 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Query as ExpressQuery } from 'express-serve-static-core';
-import { PaginationResponseType } from 'src/ts/enums';
+import { PaginationResponseType, RolesEnum } from 'src/ts/enums';
 import { CurrentUserDecorator } from 'src/auth/decorators/current-user.decorator';
-import { ApiResponseUpdateUser, UpdateUserDto } from './dto';
+import {
+  ApiResponseUpdateUser,
+  ApiResponseUpdateUserRoles,
+  UpdateUserDto,
+  UpdateUserRolesDto,
+} from './dto';
+import { RoleGuard } from 'src/auth/guards/role.guard';
+import { Role } from 'src/auth/decorators/role.decorator';
 
 @ApiTags('users')
 @Controller('users')
@@ -83,7 +90,18 @@ export class UsersController {
     @CurrentUserDecorator() user: User,
     @Body() updateUserDto: UpdateUserDto,
   ): Promise<{ userId: string }> {
-    console.log(user);
     return await this.userService.update(user, updateUserDto);
+  }
+
+  @Patch('/roles/:userId')
+  @UseGuards(AuthGuard(), RoleGuard)
+  @Role(RolesEnum.PERMISSION_MANAGER)
+  @ApiBearerAuth()
+  @ApiOkResponse({ status: 200, type: ApiResponseUpdateUserRoles })
+  async updateRoles(
+    @Param('userId') userId: string,
+    @Body() updateUserRolesDto: UpdateUserRolesDto,
+  ): Promise<{ userId: string }> {
+    return await this.userService.updateRoles(userId, updateUserRolesDto);
   }
 }
