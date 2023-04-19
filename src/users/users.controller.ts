@@ -11,11 +11,14 @@ import { User } from './schemas/user.schema';
 import { UsersService } from './users.service';
 import { AuthGuard } from '@nestjs/passport';
 import {
+  ApiBadRequestResponse,
   ApiBearerAuth,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiQuery,
   ApiResponse,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { Query as ExpressQuery } from 'express-serve-static-core';
 import { PaginationResponseType, RolesEnum } from 'src/ts/enums';
@@ -23,6 +26,7 @@ import { CurrentUserDecorator } from 'src/auth/decorators/current-user.decorator
 import {
   ApiResponseUpdateUser,
   ApiResponseUpdateUserRoles,
+  UpdatePasswordDto,
   UpdateUserDto,
   UpdateUserRolesDto,
 } from './dto';
@@ -103,5 +107,26 @@ export class UsersController {
     @Body() updateUserRolesDto: UpdateUserRolesDto,
   ): Promise<{ userId: string }> {
     return await this.userService.updateRoles(userId, updateUserRolesDto);
+  }
+
+  @Patch('/update-password')
+  @UseGuards(AuthGuard())
+  @ApiBearerAuth()
+  @ApiOkResponse({
+    status: 200,
+    type: User,
+  })
+  @ApiBadRequestResponse({ description: 'Invalid userId' })
+  @ApiNotFoundResponse({ description: 'User not found.' })
+  @ApiUnauthorizedResponse({ description: 'Invalid current password' })
+  async updatePassword(
+    @Body() updatePasswordDto: UpdatePasswordDto,
+    @CurrentUserDecorator() user: User,
+  ): Promise<User> {
+    return await this.userService.updatePassword(
+      updatePasswordDto.currentPassword,
+      updatePasswordDto.newPassword,
+      user._id,
+    );
   }
 }

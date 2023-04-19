@@ -19,15 +19,20 @@ import {
   LoginDto,
   ResendEmailConfirmationCodeDto,
   SignUpDto,
+  ResetPassDto,
 } from './dto';
 import ServerError from '../shared/errors/ServerError';
 import { addMinutes, isAfter } from 'date-fns';
+import { UserResetPassToken } from '../users/schemas/user-reset-password.schema';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectModel(User.name)
     private userModel: Model<User>,
+
+    @InjectModel(UserResetPassToken.name)
+    private userResetPassModel: Model<UserResetPassToken>,
 
     private jwtService: JwtService,
 
@@ -123,6 +128,56 @@ export class AuthService {
     } catch (error) {
       throw new ServerError();
     }
+  }
+
+  async sendForgotPasswordEmail(email: string): Promise<void> {
+    const userEmailExists = await this.userModel.findOne({ email });
+
+    if (!userEmailExists) {
+      throw new NotFoundException('User not found.');
+    }
+
+    const code = generateCode();
+
+    await this.userResetPassModel.deleteMany({ user: userEmailExists._id });
+    await this.userResetPassModel.create({ code, user: userEmailExists._id });
+
+    return await this.mailService.sendForgotPassword({ code, to: email });
+  }
+
+  async resetPassword(resetPassDto: ResetPassDto): Promise<User> {
+    const userCodeExists: any = await this.userResetPassModel.findOne({
+      code: resetPassDto.code,
+    });
+
+    if (!userCodeExists) {
+      throw new NotFoundException('Invalid code');
+    }
+
+    const recordUserCode = await this.userModel.findById(userCodeExists.user);
+
+    if (!recordUserCode) {
+      throw new BadRequestException('Code do not match with your user');
+    }
+
+    const compareDate = addMinutes(
+      new Date(userCodeExists.createdAt).getTime(),
+      10,
+    );
+
+    if (isAfter(Date.now(), compareDate)) {
+      throw new UnauthorizedException('Expired code');
+    }
+
+    const hashedPassword = await bcrypt.hash(resetPassDto.newPassword, 10);
+
+    return await this.userModel.findByIdAndUpdate(
+      recordUserCode._id,
+      {
+        password: hashedPassword,
+      },
+      { new: true, runValidators: true },
+    );
   }
 
   // Login
