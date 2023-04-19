@@ -111,6 +111,7 @@ export class AuthController {
 
   @Patch('reset-password')
   @HttpCode(200)
+  @ApiOkResponse({ type: User })
   async resetPassword(@Body() resetPassDto: ResetPassDto): Promise<User> {
     return await this.authService.resetPassword(resetPassDto);
   }
