@@ -5,7 +5,9 @@ import {
   Param,
   Patch,
   Query,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { User } from './schemas/user.schema';
 import { UsersService } from './users.service';
@@ -13,6 +15,7 @@ import { AuthGuard } from '@nestjs/passport';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
+  ApiConsumes,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiQuery,
@@ -32,6 +35,7 @@ import {
 } from './dto';
 import { RoleGuard } from 'src/auth/guards/role.guard';
 import { Role } from 'src/auth/decorators/role.decorator';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('users')
 @Controller('users')
@@ -88,13 +92,16 @@ export class UsersController {
 
   @Patch()
   @UseGuards(AuthGuard())
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
   @ApiBearerAuth()
   @ApiOkResponse({ status: 200, type: ApiResponseUpdateUser })
   async update(
     @CurrentUserDecorator() user: User,
     @Body() updateUserDto: UpdateUserDto,
+    @UploadedFile() file: Express.Multer.File,
   ): Promise<{ userId: string }> {
-    return await this.userService.update(user, updateUserDto);
+    return await this.userService.update(user, updateUserDto, file);
   }
 
   @Patch('/roles/:userId')

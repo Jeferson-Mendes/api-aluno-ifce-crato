@@ -20,6 +20,20 @@ export enum RefectoryStatusEnum {
   closed = 'closed',
 }
 
+export enum CourseType {
+  agropecuariaIntegrado = 'agropecuariaIntegrado',
+  informaticaParaInternet = 'informaticaParaInternet',
+  agroindustria = 'agroindustria',
+  lazer = 'lazer',
+  agropecuariaSubsequente = 'agropecuariaSubsequente',
+  sistemasDeInformacao = 'sistemasDeInformacao',
+  zootecnia = 'zootecnia',
+  letrasPortuguesEspanhol = 'letrasPortuguesEspanhol',
+  gestaoEmanejoDeRecursosAmbientais = 'gestaoEmanejoDeRecursosAmbientais',
+  manejoSustentavelDaIrrigacao = 'manejoSustentavelDaIrrigacao',
+  producaoAnimalNoSemiarido = 'producaoAnimalNoSemiarido',
+}
+
 type listTypes = Communique | Refectory | User;
 
 export type RefectoryAnswerType = {

@@ -24,6 +24,7 @@ import {
 import ServerError from '../shared/errors/ServerError';
 import { addMinutes, isAfter } from 'date-fns';
 import { UserResetPassToken } from '../users/schemas/user-reset-password.schema';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @Injectable()
 export class AuthService {
@@ -34,28 +35,43 @@ export class AuthService {
     @InjectModel(UserResetPassToken.name)
     private userResetPassModel: Model<UserResetPassToken>,
 
+    private cloudinaryService: CloudinaryService,
+
     private jwtService: JwtService,
 
     private mailService: MailService,
   ) {}
 
   // Register user
-  async signUp(signUpDto: SignUpDto): Promise<User> {
+  async signUp(
+    signUpDto: SignUpDto,
+    file?: Express.Multer.File,
+  ): Promise<User> {
     const { password, email } = signUpDto;
+    let fileToStorage = null;
+
     const emailCode = generateCode();
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     await this.mailService.accountConfirmation({ code: emailCode, to: email });
+
+    if (file) {
+      fileToStorage = await this.cloudinaryService.uploadImage(file);
+    }
+
     try {
       const user = await this.userModel.create({
         ...signUpDto,
         password: hashedPassword,
         emailCode,
+        avatarUrl: fileToStorage.secure_url,
+        avatarPublicId: fileToStorage.public_id,
       });
 
       return user;
     } catch (error) {
+      await this.cloudinaryService.deleteImage(fileToStorage.public_id);
       // Handle duplicate email
       if (error.code === 11000) {
         throw new ConflictException('Duplicate Email entered');

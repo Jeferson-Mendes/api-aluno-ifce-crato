@@ -9,6 +9,7 @@ import { UserSchema } from '../users/schemas/user.schema';
 import { JwtStrategy } from './jwt.strategy';
 import { MailModule } from '../mail/mail.module';
 import { UserResetPassTokenSchema } from '../users/schemas/user-reset-password.schema';
+import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { UserResetPassTokenSchema } from '../users/schemas/user-reset-password.s
       { name: 'UserResetPassToken', schema: UserResetPassTokenSchema },
     ]),
     MailModule,
+    CloudinaryModule,
   ],
   controllers: [AuthController],
   providers: [JwtStrategy, AuthService],

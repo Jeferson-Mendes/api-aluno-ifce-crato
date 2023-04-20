@@ -1,5 +1,14 @@
-import { Controller, Post, Body, HttpCode, Patch } from '@nestjs/common';
 import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  Patch,
+  UseInterceptors,
+  UploadedFile,
+} from '@nestjs/common';
+import {
+  ApiConsumes,
   ApiCreatedResponse,
   ApiOkResponse,
   ApiResponse,
@@ -15,6 +24,7 @@ import {
   ResetPassDto,
   SendForgotPassDto,
 } from './dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('users')
 @Controller('auth')
@@ -24,12 +34,17 @@ export class AuthController {
   // Register user
   @Post('/signup')
   @HttpCode(201)
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
   @ApiCreatedResponse({
     status: 201,
     type: User,
   })
-  async signUp(@Body() signUpDto: SignUpDto): Promise<User> {
-    return await this.authService.signUp(signUpDto);
+  async signUp(
+    @Body() signUpDto: SignUpDto,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<User> {
+    return await this.authService.signUp(signUpDto, file);
   }
 
   @Post('confirm/email-code')
