@@ -9,7 +9,7 @@ import {
   IsOptional,
   IsEnum,
 } from 'class-validator';
-import { RolesEnum, UserType } from 'src/ts/enums';
+import { CourseType, RolesEnum, UserType } from 'src/ts/enums';
 
 export class SignUpDto {
   @IsNotEmpty()
@@ -27,6 +27,17 @@ export class SignUpDto {
   @MinLength(7)
   @ApiProperty({ type: String })
   readonly password: string;
+
+  @IsOptional()
+  @ApiProperty({ required: false })
+  readonly file?: string;
+
+  @IsOptional()
+  @IsEnum(CourseType, {
+    message: 'Please provide a valid value for course type',
+  })
+  @ApiProperty({ required: false, enum: CourseType })
+  readonly course?: string;
 
   @IsOptional()
   @IsPhoneNumber('BR')

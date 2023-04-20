@@ -1,7 +1,7 @@
 import { Schema, Prop, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 import { ApiProperty } from '@nestjs/swagger';
-import { RolesEnum, UserType } from 'src/ts/enums';
+import { CourseType, RolesEnum, UserType } from 'src/ts/enums';
 
 @Schema({
   timestamps: true,
@@ -30,6 +30,17 @@ export class User extends Document {
   @Prop()
   @ApiProperty({ required: false })
   phoneNumber?: string;
+
+  @Prop()
+  @ApiProperty({ required: false })
+  avatarUrl?: string;
+
+  @Prop({ select: false })
+  avatarPublicId?: string;
+
+  @Prop()
+  @ApiProperty({ required: false, enum: CourseType })
+  course?: CourseType;
 
   @Prop()
   @ApiProperty({ enum: RolesEnum })

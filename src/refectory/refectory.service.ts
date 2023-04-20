@@ -244,7 +244,7 @@ export class RefectoryService {
   ): Promise<RefectoryAnswer> {
     const isValidRefectory = await this.refectoryModel.findOne({
       _id: refectoryId,
-      status: RefectoryStatusEnum.open,
+      status: RefectoryStatusEnum.openToAnswer,
     });
 
     if (!isValidRefectory) {

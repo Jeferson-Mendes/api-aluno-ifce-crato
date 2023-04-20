@@ -30,4 +30,24 @@ export class MailService {
         throw new ServerError();
       });
   }
+
+  async sendForgotPassword({ code, to }: ISendEmailInput): Promise<void> {
+    this.mailerService
+      .sendMail({
+        to,
+        from: process.env.EMAIL_USER,
+        subject: 'IFCE Crato - Recuperação de senha',
+        template: 'forgot-password',
+        context: {
+          code,
+        },
+      })
+      .then(() => {
+        console.log('forgot password email has been sended');
+      })
+      .catch((error) => {
+        console.log(error);
+        throw new ServerError();
+      });
+  }
 }

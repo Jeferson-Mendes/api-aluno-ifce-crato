@@ -1,5 +1,14 @@
-import { Controller, Post, Body, HttpCode } from '@nestjs/common';
 import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  Patch,
+  UseInterceptors,
+  UploadedFile,
+} from '@nestjs/common';
+import {
+  ApiConsumes,
   ApiCreatedResponse,
   ApiOkResponse,
   ApiResponse,
@@ -9,7 +18,13 @@ import { User } from '../users/schemas/user.schema';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { SignUpDto } from './dto/signup.dto';
-import { ConfirmEmailCodeDto, ResendEmailConfirmationCodeDto } from './dto';
+import {
+  ConfirmEmailCodeDto,
+  ResendEmailConfirmationCodeDto,
+  ResetPassDto,
+  SendForgotPassDto,
+} from './dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('users')
 @Controller('auth')
@@ -19,12 +34,17 @@ export class AuthController {
   // Register user
   @Post('/signup')
   @HttpCode(201)
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
   @ApiCreatedResponse({
     status: 201,
     type: User,
   })
-  async signUp(@Body() signUpDto: SignUpDto): Promise<User> {
-    return await this.authService.signUp(signUpDto);
+  async signUp(
+    @Body() signUpDto: SignUpDto,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<User> {
+    return await this.authService.signUp(signUpDto, file);
   }
 
   @Post('confirm/email-code')
@@ -93,5 +113,21 @@ export class AuthController {
     @Body() loginDto: LoginDto,
   ): Promise<{ user: User; token: string }> {
     return await this.authService.login(loginDto);
+  }
+
+  @Post('forgot-password')
+  @HttpCode(200)
+  async sendForgotPassword(
+    @Body() sendForgotPassword: SendForgotPassDto,
+  ): Promise<void> {
+    await this.authService.sendForgotPasswordEmail(sendForgotPassword.email);
+    return;
+  }
+
+  @Patch('reset-password')
+  @HttpCode(200)
+  @ApiOkResponse({ type: User })
+  async resetPassword(@Body() resetPassDto: ResetPassDto): Promise<User> {
+    return await this.authService.resetPassword(resetPassDto);
   }
 }

@@ -5,17 +5,23 @@ import {
   Param,
   Patch,
   Query,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { User } from './schemas/user.schema';
 import { UsersService } from './users.service';
 import { AuthGuard } from '@nestjs/passport';
 import {
+  ApiBadRequestResponse,
   ApiBearerAuth,
+  ApiConsumes,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiQuery,
   ApiResponse,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { Query as ExpressQuery } from 'express-serve-static-core';
 import { PaginationResponseType, RolesEnum } from 'src/ts/enums';
@@ -23,11 +29,13 @@ import { CurrentUserDecorator } from 'src/auth/decorators/current-user.decorator
 import {
   ApiResponseUpdateUser,
   ApiResponseUpdateUserRoles,
+  UpdatePasswordDto,
   UpdateUserDto,
   UpdateUserRolesDto,
 } from './dto';
 import { RoleGuard } from 'src/auth/guards/role.guard';
 import { Role } from 'src/auth/decorators/role.decorator';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('users')
 @Controller('users')
@@ -84,13 +92,16 @@ export class UsersController {
 
   @Patch()
   @UseGuards(AuthGuard())
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
   @ApiBearerAuth()
   @ApiOkResponse({ status: 200, type: ApiResponseUpdateUser })
   async update(
     @CurrentUserDecorator() user: User,
     @Body() updateUserDto: UpdateUserDto,
+    @UploadedFile() file: Express.Multer.File,
   ): Promise<{ userId: string }> {
-    return await this.userService.update(user, updateUserDto);
+    return await this.userService.update(user, updateUserDto, file);
   }
 
   @Patch('/roles/:userId')
@@ -103,5 +114,26 @@ export class UsersController {
     @Body() updateUserRolesDto: UpdateUserRolesDto,
   ): Promise<{ userId: string }> {
     return await this.userService.updateRoles(userId, updateUserRolesDto);
+  }
+
+  @Patch('/update-password')
+  @UseGuards(AuthGuard())
+  @ApiBearerAuth()
+  @ApiOkResponse({
+    status: 200,
+    type: User,
+  })
+  @ApiBadRequestResponse({ description: 'Invalid userId' })
+  @ApiNotFoundResponse({ description: 'User not found.' })
+  @ApiUnauthorizedResponse({ description: 'Invalid current password' })
+  async updatePassword(
+    @Body() updatePasswordDto: UpdatePasswordDto,
+    @CurrentUserDecorator() user: User,
+  ): Promise<User> {
+    return await this.userService.updatePassword(
+      updatePasswordDto.currentPassword,
+      updatePasswordDto.newPassword,
+      user._id,
+    );
   }
 }
