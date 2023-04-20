@@ -34,7 +34,7 @@ export class CronService {
 
       await this.refectoryModel.updateOne(
         {
-          status: 'shceduled',
+          status: 'scheduled',
           startAnswersDate: { $lte: millissecondDate },
         },
         { status: 'openToAnswer' },
