@@ -98,7 +98,9 @@ export class UsersService {
 
     try {
       if (file) {
-        await this.cloudinaryService.deleteImage(recordUser.avatarPublicId);
+        if (recordUser.avatarPublicId) {
+          await this.cloudinaryService.deleteImage(recordUser.avatarPublicId);
+        }
         fileToStorage = await this.cloudinaryService.uploadImage(file);
       }
 
