@@ -49,29 +49,38 @@ export class AuthService {
   ): Promise<User> {
     const { password, email } = signUpDto;
     let fileToStorage = null;
+    const resourceData = {
+      avatarUrl: '',
+      avatarPublicId: '',
+    };
 
     const emailCode = generateCode();
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    await this.mailService.accountConfirmation({ code: emailCode, to: email });
-
-    if (file) {
-      fileToStorage = await this.cloudinaryService.uploadImage(file);
-    }
-
     try {
+      await this.mailService.accountConfirmation({
+        code: emailCode,
+        to: email,
+      });
+
+      if (file) {
+        fileToStorage = await this.cloudinaryService.uploadImage(file);
+        resourceData.avatarUrl = fileToStorage.secure_url;
+        resourceData.avatarPublicId = fileToStorage.public_id;
+      }
       const user = await this.userModel.create({
         ...signUpDto,
         password: hashedPassword,
         emailCode,
-        avatarUrl: fileToStorage.secure_url,
-        avatarPublicId: fileToStorage.public_id,
+        ...resourceData,
       });
 
       return user;
     } catch (error) {
-      await this.cloudinaryService.deleteImage(fileToStorage.public_id);
+      if (file) {
+        await this.cloudinaryService.deleteImage(resourceData.avatarPublicId);
+      }
       // Handle duplicate email
       if (error.code === 11000) {
         throw new ConflictException('Duplicate Email entered');
