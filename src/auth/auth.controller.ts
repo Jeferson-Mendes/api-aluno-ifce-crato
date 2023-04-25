@@ -25,6 +25,7 @@ import {
   SendForgotPassDto,
 } from './dto';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { SharpPipe } from '../multer/sharp.pipe';
 
 @ApiTags('users')
 @Controller('auth')
@@ -42,7 +43,7 @@ export class AuthController {
   })
   async signUp(
     @Body() signUpDto: SignUpDto,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile(SharpPipe) file: Express.Multer.File,
   ): Promise<User> {
     return await this.authService.signUp(signUpDto, file);
   }

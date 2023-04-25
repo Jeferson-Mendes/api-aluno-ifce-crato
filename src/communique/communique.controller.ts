@@ -29,6 +29,7 @@ import { CreateCommuniqueDto } from './dto/create-communique.dto';
 import { CurrentUserDecorator } from 'src/auth/decorators/current-user.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { PaginationResponseType, RolesEnum } from 'src/ts/enums';
+import { SharpPipe } from 'src/multer/sharp.pipe';
 
 @ApiTags('communique')
 @Controller('communique')
@@ -85,8 +86,8 @@ export class CommuniqueController {
   async create(
     @Body() createCommuniqueDto: CreateCommuniqueDto,
     @CurrentUserDecorator() user: User,
-    @UploadedFile() file: Express.Multer.File,
-  ): Promise<Communique> {
+    @UploadedFile(SharpPipe) file: Express.Multer.File,
+  ): Promise<Communique | any> {
     return await this.communiqueService.create(
       createCommuniqueDto,
       user._id,
