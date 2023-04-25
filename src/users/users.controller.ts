@@ -36,6 +36,7 @@ import {
 import { RoleGuard } from 'src/auth/guards/role.guard';
 import { Role } from 'src/auth/decorators/role.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { SharpPipe } from '../multer/sharp.pipe';
 
 @ApiTags('users')
 @Controller('users')
@@ -99,7 +100,7 @@ export class UsersController {
   async update(
     @CurrentUserDecorator() user: User,
     @Body() updateUserDto: UpdateUserDto,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile(SharpPipe) file: Express.Multer.File,
   ): Promise<{ userId: string }> {
     return await this.userService.update(user, updateUserDto, file);
   }

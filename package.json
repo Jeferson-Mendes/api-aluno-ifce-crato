@@ -43,6 +43,7 @@
     "reflect-metadata": "^0.1.13",
     "rimraf": "^4.4.0",
     "rxjs": "^7.8.0",
+    "sharp": "^0.32.0",
     "swagger-ui-express": "^4.6.2"
   },
   "devDependencies": {
@@ -56,6 +57,7 @@
     "@types/node": "^18.15.0",
     "@types/nodemailer": "^6.4.7",
     "@types/passport-jwt": "^3.0.8",
+    "@types/sharp": "^0.31.1",
     "@types/supertest": "^2.0.12",
     "@typescript-eslint/eslint-plugin": "^5.54.1",
     "@typescript-eslint/parser": "^5.54.1",
