@@ -9,8 +9,9 @@ export enum RolesEnum {
 }
 
 export enum UserType {
-  STUDENT = 'student',
-  EMPLOYEE = 'employee',
+  student = 'student',
+  employeeTae = 'employeeTae',
+  employeeTeacher = 'employeeTeacher',
 }
 
 export enum RefectoryStatusEnum {
