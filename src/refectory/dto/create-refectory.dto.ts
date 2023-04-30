@@ -1,54 +1,32 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
 import {
+  IsArray,
   IsEmpty,
   IsNotEmpty,
   IsNumber,
-  IsObject,
-  IsOptional,
-  IsString,
+  IsUrl,
   ValidateNested,
 } from 'class-validator';
-
-class MenuDto {
-  @IsString()
-  @IsOptional()
-  @ApiProperty({ required: false })
-  breakfast: string;
-
-  @IsString()
-  @IsOptional()
-  @ApiProperty({ required: false })
-  lunch: string;
-
-  @IsString()
-  @IsOptional()
-  @ApiProperty({ required: false })
-  afternoonSnack: string;
-
-  @IsString()
-  @IsOptional()
-  @ApiProperty({ required: false })
-  dinner: string;
-
-  @IsString()
-  @IsOptional()
-  @ApiProperty({ required: false })
-  nightSnack: string;
-}
+import { Type } from 'class-transformer';
 
 export class CreateRefectoryDto {
   @IsEmpty({ message: 'You cannot provide start answer date' })
   startAnswersDate: number;
 
-  @IsNumber()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => VigencyDateModel)
+  @ApiProperty()
+  vigencyDates: VigencyDateModel[];
+
+  @IsUrl()
   @IsNotEmpty()
   @ApiProperty()
-  vigencyDate: number;
+  menuUrl: string;
+}
 
-  @IsObject()
-  @ValidateNested()
-  @Type(() => MenuDto)
-  @ApiProperty()
-  menu: MenuDto;
+class VigencyDateModel {
+  @IsNumber()
+  @IsNotEmpty()
+  vigencyDate: number;
 }

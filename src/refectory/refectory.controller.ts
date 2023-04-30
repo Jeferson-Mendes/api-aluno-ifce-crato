@@ -5,6 +5,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -14,7 +15,6 @@ import {
   ApiBearerAuth,
   ApiForbiddenResponse,
   ApiInternalServerErrorResponse,
-  ApiNotFoundResponse,
   ApiQuery,
   ApiResponse,
   ApiTags,
@@ -38,6 +38,7 @@ import {
   CreateRefectoryAnswerDto,
   CreateRefectoryDto,
   ApiResponseUpdate,
+  UpdateMenuUrlDto,
 } from './dto';
 
 @ApiTags('refectory')
@@ -49,8 +50,10 @@ export class RefectoryController {
   @UseGuards(AuthGuard())
   @ApiBearerAuth()
   @ApiResponse({ status: 200, type: Refectory })
-  async getCurrentRefectory(): Promise<Refectory> {
-    return await this.refectoryService.getCurrentRefectory();
+  async getCurrentRefectory(
+    @CurrentUserDecorator() user: User,
+  ): Promise<Refectory> {
+    return await this.refectoryService.getCurrentRefectory(user);
   }
 
   @Get('/:refectoryId')
@@ -159,15 +162,13 @@ export class RefectoryController {
   @UseGuards(AuthGuard(), RoleGuard)
   @Role(RolesEnum.REFECTORY_MANAGER)
   @ApiBearerAuth()
-  @ApiResponse({ status: 200, type: Refectory })
+  @ApiResponse({ status: 201 })
   @ApiBadRequestResponse({
     status: 400,
     description: 'The provided vigency date is invalid',
   })
   @ApiInternalServerErrorResponse({ description: 'Internal server error.' })
-  async create(
-    @Body() createRefectoryDto: CreateRefectoryDto,
-  ): Promise<Refectory> {
+  async create(@Body() createRefectoryDto: CreateRefectoryDto): Promise<void> {
     return await this.refectoryService.createRefectory(createRefectoryDto);
   }
 
@@ -194,7 +195,9 @@ export class RefectoryController {
   @Role(RolesEnum.REFECTORY_MANAGER)
   @ApiBearerAuth()
   @ApiResponse({ status: 200, type: ApiResponseUpdate })
-  @ApiNotFoundResponse({ description: 'Refectory not found.' })
+  @ApiBadRequestResponse({
+    description: 'Refectory not found or vigency date already exists.',
+  })
   @ApiForbiddenResponse({ description: 'This refectory already is open.' })
   @ApiBadRequestResponse({
     description: 'The provided vigency date is invalid.',
@@ -206,5 +209,17 @@ export class RefectoryController {
     @Param('refectoryId') refectoryId: string,
   ): Promise<{ refectoryId: string }> {
     return await this.refectoryService.update(refectoryId, updateRefectoryDto);
+  }
+
+  @Put('/menu-url')
+  @UseGuards(AuthGuard(), RoleGuard)
+  @Role(RolesEnum.REFECTORY_MANAGER)
+  @ApiBearerAuth()
+  @ApiResponse({ status: 200 })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error.' })
+  async updateMenuUrl(
+    @Body() updateMenuUrlDto: UpdateMenuUrlDto,
+  ): Promise<void> {
+    return await this.refectoryService.updateMenuUrl(updateMenuUrlDto);
   }
 }
