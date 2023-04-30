@@ -4,6 +4,7 @@ import { Cron } from '@nestjs/schedule';
 import { Model } from 'mongoose';
 import { Refectory } from 'src/refectory/schemas/refectory.schema';
 import ServerError from '../shared/errors/ServerError';
+import { RefectoryStatusEnum } from 'src/ts/enums';
 
 @Injectable()
 export class CronService {
@@ -45,7 +46,7 @@ export class CronService {
     }
   }
 
-  @Cron('0 12 * * *')
+  @Cron('0 19 * * *')
   async handleCron() {
     this.logger.debug('Job para lidar com status openToAnswer executando.');
 
@@ -57,10 +58,24 @@ export class CronService {
       await this.refectoryModel.updateOne(
         {
           status: 'openToAnswer',
-          vigencyDate: { $lte: millissecondDate },
+          startAnswersDate: { $lte: millissecondDate },
         },
         { status: 'open' },
       );
+    } catch (error) {
+      console.log(error);
+      throw new ServerError();
+    }
+  }
+
+  @Cron('0 00 * * 1')
+  async handleDeleteForm() {
+    this.logger.debug('Rotina de expurgo de formulários sendo executada.');
+
+    try {
+      await this.refectoryModel.deleteMany({
+        status: RefectoryStatusEnum.closed,
+      });
     } catch (error) {
       console.log(error);
       throw new ServerError();

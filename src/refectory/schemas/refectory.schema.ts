@@ -2,7 +2,6 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { ApiProperty } from '@nestjs/swagger';
 import { Document } from 'mongoose';
 import { RefectoryStatusEnum } from 'src/ts/enums';
-import { Menu } from './menu.schema';
 
 @Schema({
   timestamps: true,
@@ -29,9 +28,9 @@ export class Refectory extends Document {
   @ApiProperty()
   startAnswersDate: number;
 
-  @Prop({ type: Object })
+  @Prop()
   @ApiProperty()
-  menu: Menu;
+  menuUrl: string;
 }
 
 export const RefectorySchema = SchemaFactory.createForClass(Refectory);

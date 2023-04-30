@@ -2,7 +2,6 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
-  NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose from 'mongoose';
@@ -18,6 +17,7 @@ import {
   CreateRefectoryDto,
   CreateRefectoryAnswerDto,
   UpdateRefectoryDto,
+  UpdateMenuUrlDto,
 } from './dto';
 import { RefectoryAnswer } from './schemas/refectory-answer.schema';
 import { Refectory } from './schemas/refectory.schema';
@@ -35,10 +35,38 @@ export class RefectoryService {
   ) {}
 
   // Get current refectory
-  async getCurrentRefectory(): Promise<Refectory> {
+  async getCurrentRefectory(user: User): Promise<any> {
     try {
-      return await this.refectoryModel.findOne({
+      const result = await this.refectoryModel.findOne({
         status: { $in: ['open', 'openToAnswer'] },
+      });
+
+      if (result) {
+        const answer = await this.loadUserAnswer(user, result.id);
+
+        return {
+          id: result.id,
+          status: result.status,
+          vigencyDate: result.vigencyDate,
+          startAnswersDate: result.startAnswersDate,
+          menuUrl: result.menuUrl,
+          hasAnswered: !!answer,
+        };
+      }
+    } catch (error) {
+      console.log(error);
+      throw new ServerError();
+    }
+  }
+
+  async loadUserAnswer(
+    user: User,
+    refectoryId: string,
+  ): Promise<RefectoryAnswer> {
+    try {
+      return await this.refectoryAnswerModel.findOne({
+        user: user._id,
+        refectory: refectoryId,
       });
     } catch (error) {
       console.log(error);
@@ -59,9 +87,13 @@ export class RefectoryService {
     const { currentPage, resPerPage, skip } = mountPaginationAttribute(query);
     const { vigencyDate, status } = query;
 
-    const vigencyDateMilliseconds = new Date(
-      vigencyDate.toString().replace(/\s/g, ''),
-    ).getTime();
+    let vigencyDateMilliseconds = null;
+
+    if (vigencyDate) {
+      vigencyDateMilliseconds = new Date(
+        vigencyDate.toString().replace(/\s/g, ''),
+      ).getTime();
+    }
 
     const refectoryDateSearch = vigencyDate
       ? vigencyDateMilliseconds
@@ -199,37 +231,64 @@ export class RefectoryService {
   }
 
   // Create
-  async createRefectory(
-    createRefectoryDto: CreateRefectoryDto,
-  ): Promise<Refectory> {
-    const data: any = {
-      menu: createRefectoryDto.menu,
-      vigencyDate: createRefectoryDto.vigencyDate,
-      startAnswersDate: subDays(createRefectoryDto.vigencyDate, 1).getTime(),
-    };
+  async createRefectory(createRefectoryDto: CreateRefectoryDto): Promise<void> {
+    const data = [];
 
+    const millisecondsDate = createRefectoryDto.vigencyDates.map(
+      (form) => form.vigencyDate,
+    );
     const recordRefectory = await this.refectoryModel.findOne({
-      vigencyDate: { $eq: createRefectoryDto.vigencyDate },
+      vigencyDate: {
+        $in: [...millisecondsDate],
+      },
     });
 
-    const compareDate = isAfter(new Date().getTime(), data.vigencyDate);
-
-    const compareStartAnswerDate = isAfter(
-      new Date().getTime(),
-      data.startAnswersDate,
-    );
-
-    if (recordRefectory || compareDate) {
-      throw new BadRequestException('The provided vigency date is invalid');
+    if (recordRefectory) {
+      throw new BadRequestException(
+        'Some provided vigency date already exists',
+      );
     }
 
-    if (compareStartAnswerDate) {
-      data.status = RefectoryStatusEnum.openToAnswer;
+    for (
+      let index = 0;
+      index < createRefectoryDto.vigencyDates.length;
+      index++
+    ) {
+      const form = createRefectoryDto.vigencyDates[index];
+      const formObj: any = {
+        menuUrl: createRefectoryDto.menuUrl,
+        vigencyDate: form.vigencyDate,
+        startAnswersDate: subDays(form.vigencyDate, 1).getTime(),
+      };
+
+      const vigencyDateRecord = data.find(
+        (item) => item.vigencyDate === form.vigencyDate,
+      );
+
+      if (vigencyDateRecord) {
+        throw new BadRequestException('Duplicated vigency date provided');
+      }
+
+      const compareDate = isAfter(new Date().getTime(), formObj.vigencyDate);
+      const compareStartAnswerDate = isAfter(
+        new Date().getTime(),
+        formObj.startAnswersDate,
+      );
+
+      if (compareDate) {
+        throw new BadRequestException('Some provided vigency date is invalid');
+      }
+
+      if (compareStartAnswerDate) {
+        formObj.status = RefectoryStatusEnum.openToAnswer;
+      }
+
+      data.push(formObj);
     }
 
     try {
-      const createdRefectory = await this.refectoryModel.create(data);
-      return createdRefectory;
+      await this.refectoryModel.insertMany(data);
+      return;
     } catch (error) {
       console.log(error);
       throw new ServerError();
@@ -264,6 +323,7 @@ export class RefectoryService {
       const answer = await this.refectoryAnswerModel.create({
         ...createRefectoryAnswerDto,
         user: user.id,
+        refectory: refectoryId,
       });
 
       return answer;
@@ -300,12 +360,26 @@ export class RefectoryService {
     refectoryId: string,
     updateRefectoryDto: UpdateRefectoryDto,
   ): Promise<{ refectoryId: string }> {
+    const updateData: {
+      vigencyDate?: number;
+      startAnswersDate?: number;
+      status?: string;
+    } = {};
+
     const refectoryRecord = await this.refectoryModel.findOne({
       _id: refectoryId,
     });
 
-    if (!refectoryRecord) {
-      throw new NotFoundException('Refectory not found.');
+    const vigencyDateAlreadyExists = await this.refectoryModel.findOne({
+      vigencyDate: {
+        $eq: updateRefectoryDto.vigencyDate,
+      },
+    });
+
+    if (!refectoryRecord || vigencyDateAlreadyExists) {
+      throw new BadRequestException(
+        'Refectory not found or vigency date already exists.',
+      );
     }
 
     if (refectoryRecord.status === RefectoryStatusEnum.open) {
@@ -325,54 +399,34 @@ export class RefectoryService {
       throw new BadRequestException('The provided vigency date is invalid.');
     }
 
-    const vigencyDate = this.convert(
-      refectoryRecord.vigencyDate,
-      updateRefectoryDto.vigencyDate,
-    );
+    updateData.vigencyDate = updateRefectoryDto.vigencyDate;
 
-    const startAnswersDate = vigencyDate
-      ? (updateRefectoryDto.startAnswersDate = subDays(
-          vigencyDate,
-          1,
-        ).getTime())
-      : null;
+    updateData.startAnswersDate = updateData.vigencyDate
+      ? subDays(updateData.vigencyDate, 1).getTime()
+      : refectoryRecord.startAnswersDate;
 
-    const menuData = {
-      menu: {
-        breakfast: this.convert(
-          refectoryRecord.menu?.breakfast,
-          updateRefectoryDto?.menu?.breakfast,
-        ),
-        lunch: this.convert(
-          refectoryRecord.menu?.lunch,
-          updateRefectoryDto?.menu?.lunch,
-        ),
-        afternoonSnack: this.convert(
-          refectoryRecord.menu.afternoonSnack,
-          updateRefectoryDto?.menu?.afternoonSnack,
-        ),
-        dinner: this.convert(
-          refectoryRecord.menu?.dinner,
-          updateRefectoryDto?.menu?.dinner,
-        ),
-        nightSnack: this.convert(
-          refectoryRecord.menu?.nightSnack,
-          updateRefectoryDto?.menu?.nightSnack,
-        ),
-      },
-    };
+    if (isAfter(new Date().getTime(), updateData.startAnswersDate)) {
+      updateData.status = RefectoryStatusEnum.openToAnswer;
+    }
 
     try {
-      await this.refectoryModel.updateOne(
-        { _id: refectoryId },
-        { ...menuData, vigencyDate, startAnswersDate },
-        {
-          new: true,
-          runValidators: true,
-        },
-      );
+      await this.refectoryModel.updateOne({ _id: refectoryId }, updateData, {
+        new: true,
+        runValidators: true,
+      });
 
       return { refectoryId: refectoryId };
+    } catch (error) {
+      console.log(error);
+      throw new ServerError();
+    }
+  }
+
+  async updateMenuUrl(menuUrlDto: UpdateMenuUrlDto): Promise<void> {
+    const { menuUrl } = menuUrlDto;
+
+    try {
+      await this.refectoryModel.updateMany({}, { menuUrl });
     } catch (error) {
       console.log(error);
       throw new ServerError();

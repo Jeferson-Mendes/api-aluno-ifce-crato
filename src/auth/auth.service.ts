@@ -25,6 +25,7 @@ import ServerError from '../shared/errors/ServerError';
 import { addMinutes, isAfter } from 'date-fns';
 import { UserResetPassToken } from '../users/schemas/user-reset-password.schema';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { UserType } from 'src/ts/enums';
 
 @Injectable()
 export class AuthService {
@@ -42,6 +43,23 @@ export class AuthService {
     private mailService: MailService,
   ) {}
 
+  checkProfile(
+    userType: UserType,
+    registration?: string,
+    siap?: string,
+  ): boolean {
+    if (!registration && !siap) return false;
+    switch (userType) {
+      case UserType.student:
+        return !!registration;
+      case UserType.employeeTae:
+      case UserType.employeeTeacher:
+        return !!siap;
+      default:
+        return true;
+    }
+  }
+
   // Register user
   async signUp(
     signUpDto: SignUpDto,
@@ -57,6 +75,14 @@ export class AuthService {
     const emailCode = generateCode();
 
     const hashedPassword = await bcrypt.hash(password, 10);
+
+    if (
+      !this.checkProfile(signUpDto.type, signUpDto.registration, signUpDto.siap)
+    ) {
+      throw new BadRequestException(
+        'Profile type do not match with identification type',
+      );
+    }
 
     try {
       await this.mailService.accountConfirmation({

@@ -89,6 +89,15 @@ export class UsersService {
     file?: Express.Multer.File,
   ): Promise<{ userId: string }> {
     let fileToStorage = null;
+    const userData: {
+      name?: string;
+      phoneNumber?: string;
+      avatarUrl?: string;
+      avatarPublicId?: string;
+    } = {
+      ...updateUserDto,
+    };
+
     const recordUser = await this.userModel
       .findById(user._id)
       .select('+avatarPublicId');
@@ -96,22 +105,18 @@ export class UsersService {
       throw new NotFoundException('User not found.');
     }
 
-    try {
-      if (file) {
-        if (recordUser.avatarPublicId) {
-          await this.cloudinaryService.deleteImage(recordUser.avatarPublicId);
-        }
-        fileToStorage = await this.cloudinaryService.uploadImage(file);
+    if (file) {
+      if (recordUser.avatarPublicId) {
+        await this.cloudinaryService.deleteImage(recordUser.avatarPublicId);
       }
+      fileToStorage = await this.cloudinaryService.uploadImage(file);
 
-      await this.userModel.updateOne(
-        { _id: user._id },
-        {
-          ...updateUserDto,
-          avatarUrl: fileToStorage.secure_url,
-          avatarPublicId: fileToStorage.public_id,
-        },
-      );
+      userData.avatarUrl = fileToStorage.secure_url;
+      userData.avatarPublicId = fileToStorage.public_id;
+    }
+
+    try {
+      await this.userModel.updateOne({ _id: user._id }, userData);
 
       return { userId: user._id };
     } catch (error) {
