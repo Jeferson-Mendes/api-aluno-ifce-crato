@@ -174,8 +174,7 @@ export class RefectoryController {
 
   // Create refectory answer
   @Post('create/answer/:refectoryId')
-  @UseGuards(AuthGuard(), RoleGuard)
-  @Role(RolesEnum.REFECTORY_MANAGER)
+  @UseGuards(AuthGuard())
   @ApiBearerAuth()
   @ApiResponse({ status: 200, type: RefectoryAnswer })
   async createAnswer(
