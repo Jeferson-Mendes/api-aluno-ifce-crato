@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose from 'mongoose';
@@ -427,6 +428,23 @@ export class RefectoryService {
 
     try {
       await this.refectoryModel.updateMany({}, { menuUrl });
+    } catch (error) {
+      console.log(error);
+      throw new ServerError();
+    }
+  }
+
+  async deleteRefectoryForm(refectoryId: string): Promise<void> {
+    const refectoryRecord = await this.refectoryModel.findOne({
+      _id: refectoryId,
+    });
+
+    if (!refectoryRecord) {
+      throw new NotFoundException('Refectory not found');
+    }
+
+    try {
+      await this.refectoryModel.deleteOne({ _id: refectoryId });
     } catch (error) {
       console.log(error);
       throw new ServerError();

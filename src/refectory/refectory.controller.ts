@@ -1,7 +1,9 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
   Param,
   Patch,
   Post,
@@ -15,6 +17,7 @@ import {
   ApiBearerAuth,
   ApiForbiddenResponse,
   ApiInternalServerErrorResponse,
+  ApiNotFoundResponse,
   ApiQuery,
   ApiResponse,
   ApiTags,
@@ -64,6 +67,20 @@ export class RefectoryController {
     @Param('refectoryId') refectoryId: string,
   ): Promise<Refectory> {
     return await this.refectoryService.findById(refectoryId);
+  }
+
+  @Delete('/:refectoryId')
+  @UseGuards(AuthGuard(), RoleGuard)
+  @Role(RolesEnum.REFECTORY_MANAGER)
+  @HttpCode(204)
+  @ApiBearerAuth()
+  @ApiResponse({ status: 204 })
+  @ApiNotFoundResponse({ description: 'Refectory not found' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error.' })
+  async deleteRefectoryForm(
+    @Param('refectoryId') refectoryId: string,
+  ): Promise<void> {
+    return await this.refectoryService.deleteRefectoryForm(refectoryId);
   }
 
   @Get('current-refectory/answers')
