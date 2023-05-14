@@ -44,17 +44,19 @@ export type RefectoryAnswerType = {
   totalAfternoonSnack: number;
   totalDinner: number;
   totalNightSnack: number;
+  total: number;
   status: string;
-  vigencyDate: Date;
-  closingDate: Date;
+  vigencyDate: number;
+  closingDate: number;
   startAnswersDate: Date;
   users: {
-    name: string;
-    breakfast: number;
-    lunch: number;
-    afternoonSnack: number;
-    dinner: number;
-    nightSnack: number;
+    nome: string;
+    tipo: 'Estudante' | 'Servidor Tae' | 'Docente';
+    cafe: string;
+    almoco: string;
+    lanche: string;
+    janta: string;
+    ceia: string;
   }[];
 };
 
