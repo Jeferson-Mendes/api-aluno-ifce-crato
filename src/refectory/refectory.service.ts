@@ -385,7 +385,6 @@ export class RefectoryService {
     const usersToSend = await this.userModel
       .find({
         isActive: true,
-        receiveFormAnswer: true,
         roles: { $in: [RolesEnum.REFECTORY_MANAGER] },
       })
       .select('email');
@@ -394,7 +393,7 @@ export class RefectoryService {
     const data = JSON.stringify(users, null, 2);
 
     return {
-      to: serializedUsersToSend,
+      to: !!total ? serializedUsersToSend : [],
       answers: {
         vigencyDate,
         totalAfternoonSnack,

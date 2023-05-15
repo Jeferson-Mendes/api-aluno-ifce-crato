@@ -95,12 +95,14 @@ export class CronService {
     const data = await this.refectoryServices.generateAnswersPdf();
     const formatedDate = format(data.answers.vigencyDate, 'dd/MM/yyyy');
 
-    await this.mailServices.sendFormAnswers(
-      data.to,
-      data.buffer,
-      formatedDate,
-      data.answers,
-      data.answersPerUser,
-    );
+    if (data.to.length) {
+      await this.mailServices.sendFormAnswers(
+        data.to,
+        data.buffer,
+        formatedDate,
+        data.answers,
+        data.answersPerUser,
+      );
+    }
   }
 }
