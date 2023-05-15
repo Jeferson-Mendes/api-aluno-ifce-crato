@@ -63,6 +63,10 @@ export class User extends Document {
 
   @Prop({ default: false })
   @ApiProperty()
+  receiveFormAnswer: boolean;
+
+  @Prop({ default: false })
+  @ApiProperty()
   isActive: boolean;
 }
 

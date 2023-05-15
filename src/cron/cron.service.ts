@@ -5,12 +5,18 @@ import { Model } from 'mongoose';
 import { Refectory } from 'src/refectory/schemas/refectory.schema';
 import ServerError from '../shared/errors/ServerError';
 import { RefectoryStatusEnum } from 'src/ts/enums';
+import { RefectoryService } from '../refectory/refectory.service';
+import { MailService } from '../mail/mail.service';
+import { format } from 'date-fns';
 
 @Injectable()
 export class CronService {
   constructor(
     @InjectModel(Refectory.name)
     private refectoryModel: Model<Refectory>,
+
+    private refectoryServices: RefectoryService,
+    private mailServices: MailService,
   ) {}
   private readonly logger = new Logger(CronService.name);
 
@@ -79,6 +85,24 @@ export class CronService {
     } catch (error) {
       console.log(error);
       throw new ServerError();
+    }
+  }
+
+  @Cron('10 19 * * 0,1,2,3,4,5')
+  async handleSendFormResult() {
+    this.logger.debug('Rotina para envio de respostas aos gestores.');
+
+    const data = await this.refectoryServices.generateAnswersPdf();
+    const formatedDate = format(data.answers.vigencyDate, 'dd/MM/yyyy');
+
+    if (data.to.length) {
+      await this.mailServices.sendFormAnswers(
+        data.to,
+        data.buffer,
+        formatedDate,
+        data.answers,
+        data.answersPerUser,
+      );
     }
   }
 }

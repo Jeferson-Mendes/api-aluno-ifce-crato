@@ -12,6 +12,8 @@ import {
   PaginationResponseType,
   RefectoryAnswerType,
   RefectoryStatusEnum,
+  RolesEnum,
+  UserType,
 } from 'src/ts/enums';
 import { User } from '../users/schemas/user.schema';
 import {
@@ -33,6 +35,9 @@ export class RefectoryService {
 
     @InjectModel(RefectoryAnswer.name)
     private refectoryAnswerModel: mongoose.Model<RefectoryAnswer>,
+
+    @InjectModel(User.name)
+    private userModel: mongoose.Model<User>,
   ) {}
 
   // Get current refectory
@@ -162,7 +167,10 @@ export class RefectoryService {
         },
         {
           $match: {
-            'refectory.status': 'open',
+            $or: [
+              { 'refectory.status': 'openToAnswer' },
+              { 'refectory.status': 'open' },
+            ],
           },
         },
         {
@@ -202,24 +210,58 @@ export class RefectoryService {
             vigencyDate: {
               $first: '$refectory.vigencyDate',
             },
-            closingDate: {
-              $first: '$refectory.closingDate',
-            },
             startAnswersDate: {
               $first: '$refectory.startAnswersDate',
             },
             users: {
               $push: {
-                name: '$user.name',
-                breakfast: {
-                  $sum: '$breakfast',
+                nome: '$user.name',
+                tipo: {
+                  $switch: {
+                    branches: [
+                      {
+                        case: { $eq: ['$user.type', 'student'] },
+                        then: 'Estudante',
+                      },
+                      {
+                        case: { $eq: ['$user.type', 'employeeTae'] },
+                        then: 'Servidor Tae',
+                      },
+                    ],
+                    default: 'Docente',
+                  },
                 },
-                lunch: '$lunch',
-                afternoonSnack: '$afternoonSnack',
-                dinner: '$dinner',
-                nightSnack: '$nightSnack',
+                cafe: { $cond: [{ $eq: ['$breakfast', 1] }, 'SIM', 'NAO'] },
+                almoco: { $cond: [{ $eq: ['$lunch', 1] }, 'SIM', 'NAO'] },
+                lanche: {
+                  $cond: [{ $eq: ['$afternoonSnack', 1] }, 'SIM', 'NAO'],
+                },
+                janta: { $cond: [{ $eq: ['$dinner', 1] }, 'SIM', 'NAO'] },
+                ceia: { $cond: [{ $eq: ['$nightSnack', 1] }, 'SIM', 'NAO'] },
               },
             },
+          },
+        },
+        {
+          $project: {
+            totalBreakfast: 1,
+            totalLunch: 1,
+            totalAfternoonSnack: 1,
+            totalDinner: 1,
+            totalNightSnack: 1,
+            total: {
+              $sum: [
+                '$totalBreakfast',
+                '$totalLunch',
+                '$totalAfternoonSnack',
+                '$totalDinner',
+                '$totalNightSnack',
+              ],
+            },
+            status: 1,
+            vigencyDate: 1,
+            startAnswersDate: 1,
+            users: 1,
           },
         },
       ]);
@@ -229,6 +271,141 @@ export class RefectoryService {
       console.log(error);
       throw new ServerError();
     }
+  }
+
+  async generateAnswersPdf(): Promise<{
+    to: string[];
+    answers: Partial<RefectoryAnswerType>;
+    answersPerUser: {
+      _id: 'student' | 'employeeTae' | 'employeeTeacher';
+      type: 'Estudante' | 'Servidor Tae' | 'Docente';
+      total: number;
+    }[];
+    buffer: Buffer;
+  }> {
+    const {
+      vigencyDate,
+      totalAfternoonSnack,
+      totalBreakfast,
+      totalDinner,
+      totalLunch,
+      totalNightSnack,
+      total,
+      users,
+    } = await this.getAnswers();
+    const answersPerUser = (await this.refectoryAnswerModel.aggregate([
+      {
+        $lookup: {
+          from: 'refectories',
+          localField: 'refectory',
+          foreignField: '_id',
+          as: 'refectory',
+        },
+      },
+      {
+        $unwind: {
+          path: '$refectory',
+        },
+      },
+      {
+        $match: {
+          $or: [
+            {
+              'refectory.status': 'openToAnswer',
+            },
+            {
+              'refectory.status': 'open',
+            },
+          ],
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'user',
+          foreignField: '_id',
+          as: 'user',
+        },
+      },
+      {
+        $unwind: {
+          path: '$user',
+        },
+      },
+      {
+        $group: {
+          _id: '$refectory._id',
+          users: {
+            $push: {
+              name: '$user.name',
+              type: '$user.type',
+            },
+          },
+        },
+      },
+      {
+        $unwind: {
+          path: '$users',
+        },
+      },
+      {
+        $group: {
+          _id: '$users.type',
+          total: {
+            $count: {},
+          },
+        },
+      },
+      {
+        $project: {
+          type: {
+            $switch: {
+              branches: [
+                {
+                  case: { $eq: ['$_id', UserType.student] },
+                  then: 'Estudante',
+                },
+                {
+                  case: { $eq: ['$_id', UserType.employeeTae] },
+                  then: 'Servidor Tae',
+                },
+              ],
+              default: 'Docente',
+            },
+          },
+          total: 1,
+        },
+      },
+    ])) as {
+      _id: 'student' | 'employeeTae' | 'employeeTeacher';
+      type: 'Estudante' | 'Servidor Tae' | 'Docente';
+      total: number;
+    }[];
+
+    const usersToSend = await this.userModel
+      .find({
+        isActive: true,
+        roles: { $in: [RolesEnum.REFECTORY_MANAGER] },
+      })
+      .select('email');
+
+    const serializedUsersToSend = usersToSend.map((user) => user.email);
+    const data = JSON.stringify(users, null, 2);
+
+    return {
+      to: !!total ? serializedUsersToSend : [],
+      answers: {
+        vigencyDate,
+        totalAfternoonSnack,
+        totalBreakfast,
+        totalDinner,
+        totalLunch,
+        totalNightSnack,
+        total,
+      },
+      answersPerUser,
+      buffer: Buffer.from(data, 'utf-8'),
+    };
   }
 
   // Create
