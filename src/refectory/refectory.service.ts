@@ -275,7 +275,7 @@ export class RefectoryService {
 
   async generateAnswersPdf(): Promise<{
     to: string[];
-    answers: Partial<RefectoryAnswerType>;
+    answers?: Partial<RefectoryAnswerType>;
     answersPerUser: {
       _id: 'student' | 'employeeTae' | 'employeeTeacher';
       type: 'Estudante' | 'Servidor Tae' | 'Docente';
@@ -394,15 +394,17 @@ export class RefectoryService {
 
     return {
       to: !!total ? serializedUsersToSend : [],
-      answers: {
-        vigencyDate,
-        totalAfternoonSnack,
-        totalBreakfast,
-        totalDinner,
-        totalLunch,
-        totalNightSnack,
-        total,
-      },
+      answers: !!total
+        ? {
+            vigencyDate,
+            totalAfternoonSnack,
+            totalBreakfast,
+            totalDinner,
+            totalLunch,
+            totalNightSnack,
+            total,
+          }
+        : null,
       answersPerUser,
       buffer: Buffer.from(data, 'utf-8'),
     };
