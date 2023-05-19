@@ -25,7 +25,7 @@ import {
 import { RefectoryAnswer } from './schemas/refectory-answer.schema';
 import { Refectory } from './schemas/refectory.schema';
 import { Query } from 'express-serve-static-core';
-import { isAfter, isBefore, subDays } from 'date-fns';
+import { isAfter, isBefore, set, subDays } from 'date-fns';
 
 @Injectable()
 export class RefectoryService {
@@ -275,7 +275,7 @@ export class RefectoryService {
 
   async generateAnswersPdf(): Promise<{
     to: string[];
-    answers: Partial<RefectoryAnswerType>;
+    answers?: Partial<RefectoryAnswerType>;
     answersPerUser: {
       _id: 'student' | 'employeeTae' | 'employeeTeacher';
       type: 'Estudante' | 'Servidor Tae' | 'Docente';
@@ -394,15 +394,17 @@ export class RefectoryService {
 
     return {
       to: !!total ? serializedUsersToSend : [],
-      answers: {
-        vigencyDate,
-        totalAfternoonSnack,
-        totalBreakfast,
-        totalDinner,
-        totalLunch,
-        totalNightSnack,
-        total,
-      },
+      answers: !!total
+        ? {
+            vigencyDate,
+            totalAfternoonSnack,
+            totalBreakfast,
+            totalDinner,
+            totalLunch,
+            totalNightSnack,
+            total,
+          }
+        : null,
       answersPerUser,
       buffer: Buffer.from(data, 'utf-8'),
     };
@@ -412,8 +414,13 @@ export class RefectoryService {
   async createRefectory(createRefectoryDto: CreateRefectoryDto): Promise<void> {
     const data = [];
 
-    const millisecondsDate = createRefectoryDto.vigencyDates.map(
-      (form) => form.vigencyDate,
+    const millisecondsDate = createRefectoryDto.vigencyDates.map((form) =>
+      set(form.vigencyDate, {
+        hours: 0,
+        minutes: 0,
+        seconds: 0,
+        milliseconds: 0,
+      }).valueOf(),
     );
     const recordRefectory = await this.refectoryModel.findOne({
       vigencyDate: {
@@ -427,20 +434,16 @@ export class RefectoryService {
       );
     }
 
-    for (
-      let index = 0;
-      index < createRefectoryDto.vigencyDates.length;
-      index++
-    ) {
-      const form = createRefectoryDto.vigencyDates[index];
+    for (let index = 0; index < millisecondsDate.length; index++) {
+      const vigencyDate = millisecondsDate[index];
       const formObj: any = {
         menuUrl: createRefectoryDto.menuUrl,
-        vigencyDate: form.vigencyDate,
-        startAnswersDate: subDays(form.vigencyDate, 1).getTime(),
+        vigencyDate: vigencyDate,
+        startAnswersDate: subDays(vigencyDate, 1).getTime(),
       };
 
       const vigencyDateRecord = data.find(
-        (item) => item.vigencyDate === form.vigencyDate,
+        (item) => item.vigencyDate === vigencyDate,
       );
 
       if (vigencyDateRecord) {
@@ -544,13 +547,19 @@ export class RefectoryService {
       status?: string;
     } = {};
 
+    const formatedVigencyDate = set(updateRefectoryDto.vigencyDate, {
+      hours: 0,
+      minutes: 0,
+      seconds: 0,
+      milliseconds: 0,
+    }).valueOf();
     const refectoryRecord = await this.refectoryModel.findOne({
       _id: refectoryId,
     });
 
     const vigencyDateAlreadyExists = await this.refectoryModel.findOne({
       vigencyDate: {
-        $eq: updateRefectoryDto.vigencyDate,
+        $eq: formatedVigencyDate,
       },
     });
 
@@ -564,20 +573,13 @@ export class RefectoryService {
       throw new ForbiddenException('This refectory already is open.');
     }
 
-    const refectoryWithVigencyDate = await this.refectoryModel.findOne({
-      vigencyDate: { $eq: updateRefectoryDto.vigencyDate },
-    });
+    const compareDate = isAfter(new Date().getTime(), formatedVigencyDate);
 
-    const compareDate = isAfter(
-      new Date().getTime(),
-      updateRefectoryDto.vigencyDate,
-    );
-
-    if (refectoryWithVigencyDate || compareDate) {
+    if (compareDate) {
       throw new BadRequestException('The provided vigency date is invalid.');
     }
 
-    updateData.vigencyDate = updateRefectoryDto.vigencyDate;
+    updateData.vigencyDate = formatedVigencyDate;
 
     updateData.startAnswersDate = updateData.vigencyDate
       ? subDays(updateData.vigencyDate, 1).getTime()

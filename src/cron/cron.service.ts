@@ -24,7 +24,7 @@ export class CronService {
   // scheduled -> openToAnswer
   // openToAnswer -> open
 
-  @Cron('0 00 * * *')
+  @Cron('30 00-02 * * *')
   async handleDailyCron() {
     this.logger.debug('Job para lidar com status open/scheduled executando.');
 
@@ -93,9 +93,9 @@ export class CronService {
     this.logger.debug('Rotina para envio de respostas aos gestores.');
 
     const data = await this.refectoryServices.generateAnswersPdf();
-    const formatedDate = format(data.answers.vigencyDate, 'dd/MM/yyyy');
 
-    if (data.to.length) {
+    if (data.answers && data.to.length) {
+      const formatedDate = format(data.answers.vigencyDate, 'dd/MM/yyyy');
       await this.mailServices.sendFormAnswers(
         data.to,
         data.buffer,
