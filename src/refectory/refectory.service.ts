@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose from 'mongoose';
-import { mountPaginationAttribute } from 'src/helpers';
+import { mountPaginationAttribute, resetTime } from 'src/helpers';
 import ServerError from 'src/shared/errors/ServerError';
 import {
   PaginationResponseType,
@@ -25,7 +25,13 @@ import {
 import { RefectoryAnswer } from './schemas/refectory-answer.schema';
 import { Refectory } from './schemas/refectory.schema';
 import { Query } from 'express-serve-static-core';
-import { isAfter, isBefore, set, subDays } from 'date-fns';
+import {
+  differenceInHours,
+  isAfter,
+  isBefore,
+  isEqual,
+  subDays,
+} from 'date-fns';
 
 @Injectable()
 export class RefectoryService {
@@ -414,17 +420,12 @@ export class RefectoryService {
   async createRefectory(createRefectoryDto: CreateRefectoryDto): Promise<void> {
     const data = [];
 
-    const millisecondsDate = createRefectoryDto.vigencyDates.map((form) =>
-      set(form.vigencyDate, {
-        hours: 0,
-        minutes: 0,
-        seconds: 0,
-        milliseconds: 0,
-      }).valueOf(),
+    const formatedDates = createRefectoryDto.vigencyDates.map((form) =>
+      resetTime(new Date(form.vigencyDate)),
     );
     const recordRefectory = await this.refectoryModel.findOne({
       vigencyDate: {
-        $in: [...millisecondsDate],
+        $in: [...formatedDates],
       },
     });
 
@@ -434,30 +435,36 @@ export class RefectoryService {
       );
     }
 
-    for (let index = 0; index < millisecondsDate.length; index++) {
-      const vigencyDate = millisecondsDate[index];
+    for (let index = 0; index < formatedDates.length; index++) {
+      const vigencyDate = formatedDates[index];
       const formObj: any = {
         menuUrl: createRefectoryDto.menuUrl,
         vigencyDate: vigencyDate,
-        startAnswersDate: subDays(vigencyDate, 1).getTime(),
+        startAnswersDate: subDays(new Date(vigencyDate), 1),
       };
 
-      const vigencyDateRecord = data.find(
-        (item) => item.vigencyDate === vigencyDate,
+      const vigencyDateRecord = data.find((item) =>
+        isEqual(new Date(item.vigencyDate), vigencyDate),
       );
 
       if (vigencyDateRecord) {
         throw new BadRequestException('Duplicated vigency date provided');
       }
 
-      const compareDate = isAfter(new Date().getTime(), formObj.vigencyDate);
+      const compareDate = isAfter(new Date(), formObj.vigencyDate);
       const compareStartAnswerDate = isAfter(
-        new Date().getTime(),
+        new Date(),
         formObj.startAnswersDate,
       );
 
       if (compareDate) {
         throw new BadRequestException('Some provided vigency date is invalid');
+      }
+
+      if (differenceInHours(vigencyDate, new Date()) <= 5) {
+        throw new BadRequestException(
+          'Some provided vigency date with insufficient time to answer',
+        );
       }
 
       if (compareStartAnswerDate) {
@@ -542,17 +549,14 @@ export class RefectoryService {
     updateRefectoryDto: UpdateRefectoryDto,
   ): Promise<{ refectoryId: string }> {
     const updateData: {
-      vigencyDate?: number;
-      startAnswersDate?: number;
+      vigencyDate?: Date;
+      startAnswersDate?: Date;
       status?: string;
     } = {};
 
-    const formatedVigencyDate = set(updateRefectoryDto.vigencyDate, {
-      hours: 0,
-      minutes: 0,
-      seconds: 0,
-      milliseconds: 0,
-    }).valueOf();
+    const formatedVigencyDate = resetTime(
+      new Date(updateRefectoryDto.vigencyDate),
+    );
     const refectoryRecord = await this.refectoryModel.findOne({
       _id: refectoryId,
     });
@@ -573,7 +577,7 @@ export class RefectoryService {
       throw new ForbiddenException('This refectory already is open.');
     }
 
-    const compareDate = isAfter(new Date().getTime(), formatedVigencyDate);
+    const compareDate = isAfter(new Date(), new Date(formatedVigencyDate));
 
     if (compareDate) {
       throw new BadRequestException('The provided vigency date is invalid.');
@@ -582,10 +586,10 @@ export class RefectoryService {
     updateData.vigencyDate = formatedVigencyDate;
 
     updateData.startAnswersDate = updateData.vigencyDate
-      ? subDays(updateData.vigencyDate, 1).getTime()
-      : refectoryRecord.startAnswersDate;
+      ? subDays(new Date(updateData.vigencyDate), 1)
+      : new Date(refectoryRecord.startAnswersDate);
 
-    if (isAfter(new Date().getTime(), updateData.startAnswersDate)) {
+    if (isAfter(new Date(), new Date(updateData.startAnswersDate))) {
       updateData.status = RefectoryStatusEnum.openToAnswer;
     }
 

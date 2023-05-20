@@ -1,9 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
   IsArray,
+  IsDateString,
   IsEmpty,
   IsNotEmpty,
-  IsNumber,
   IsUrl,
   ValidateNested,
 } from 'class-validator';
@@ -11,7 +11,7 @@ import { Type } from 'class-transformer';
 
 export class CreateRefectoryDto {
   @IsEmpty({ message: 'You cannot provide start answer date' })
-  startAnswersDate: number;
+  startAnswersDate: Date;
 
   @IsArray()
   @ValidateNested({ each: true })
@@ -26,7 +26,7 @@ export class CreateRefectoryDto {
 }
 
 class VigencyDateModel {
-  @IsNumber()
+  @IsDateString()
   @IsNotEmpty()
-  vigencyDate: number;
+  vigencyDate: Date;
 }
