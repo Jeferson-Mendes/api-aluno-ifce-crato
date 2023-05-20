@@ -24,7 +24,7 @@ export class CronService {
   // scheduled -> openToAnswer
   // openToAnswer -> open
 
-  @Cron('30 00-02 * * *')
+  @Cron('0 00 * * *')
   async handleDailyCron() {
     this.logger.debug('Job para lidar com status open/scheduled executando.');
 
@@ -32,17 +32,17 @@ export class CronService {
     // 00 -> Checa se existe form 'open' para fechar
     // 00 -> Checa se existe form agendado, e passa a aceitar respostas
 
-    const millissecondDate = new Date().getTime();
+    const date = new Date();
     try {
       await this.refectoryModel.updateOne(
-        { status: 'open', vigencyDate: { $lte: millissecondDate } },
+        { status: 'open', vigencyDate: { $lte: date } },
         { status: 'closed' },
       );
 
       await this.refectoryModel.updateOne(
         {
           status: 'scheduled',
-          startAnswersDate: { $lte: millissecondDate },
+          startAnswersDate: { $lte: date },
         },
         { status: 'openToAnswer' },
       );
@@ -59,12 +59,10 @@ export class CronService {
     // 00, 12h
     // 12 -> Checa se há form com status 'openToAnswer' e muda para 'open'\
 
-    const millissecondDate = new Date().getTime();
     try {
       await this.refectoryModel.updateOne(
         {
           status: 'openToAnswer',
-          startAnswersDate: { $lte: millissecondDate },
         },
         { status: 'open' },
       );

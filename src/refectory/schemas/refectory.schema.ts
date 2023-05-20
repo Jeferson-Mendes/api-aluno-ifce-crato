@@ -22,11 +22,11 @@ export class Refectory extends Document {
 
   @Prop()
   @ApiProperty()
-  vigencyDate: number;
+  vigencyDate: Date;
 
   @Prop()
   @ApiProperty()
-  startAnswersDate: number;
+  startAnswersDate: Date;
 
   @Prop()
   @ApiProperty()
