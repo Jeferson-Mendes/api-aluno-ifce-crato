@@ -289,16 +289,7 @@ export class RefectoryService {
     }[];
     buffer: Buffer;
   }> {
-    const {
-      vigencyDate,
-      totalAfternoonSnack,
-      totalBreakfast,
-      totalDinner,
-      totalLunch,
-      totalNightSnack,
-      total,
-      users,
-    } = await this.getAnswers();
+    const answers = await this.getAnswers();
     const answersPerUser = (await this.refectoryAnswerModel.aggregate([
       {
         $lookup: {
@@ -396,19 +387,19 @@ export class RefectoryService {
       .select('email');
 
     const serializedUsersToSend = usersToSend.map((user) => user.email);
-    const data = JSON.stringify(users, null, 2);
+    const data = JSON.stringify(answers?.users ?? '', null, 2);
 
     return {
-      to: !!total ? serializedUsersToSend : [],
-      answers: !!total
+      to: answers?.total ? serializedUsersToSend : [],
+      answers: answers?.total
         ? {
-            vigencyDate,
-            totalAfternoonSnack,
-            totalBreakfast,
-            totalDinner,
-            totalLunch,
-            totalNightSnack,
-            total,
+            vigencyDate: answers?.vigencyDate,
+            totalAfternoonSnack: answers?.totalAfternoonSnack,
+            totalBreakfast: answers?.totalBreakfast,
+            totalDinner: answers?.totalDinner,
+            totalLunch: answers?.totalLunch,
+            totalNightSnack: answers?.totalNightSnack,
+            total: answers?.total,
           }
         : null,
       answersPerUser,
