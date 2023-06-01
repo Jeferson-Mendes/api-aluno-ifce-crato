@@ -24,7 +24,7 @@ export class CronService {
   // scheduled -> openToAnswer
   // openToAnswer -> open
 
-  @Cron('0 00 * * *')
+  @Cron('0 00 * * *', { timeZone: 'America/Sao_Paulo' })
   async handleDailyCron() {
     this.logger.debug('Job para lidar com status open/scheduled executando.');
 
@@ -52,7 +52,7 @@ export class CronService {
     }
   }
 
-  @Cron('0 19 * * *')
+  @Cron('0 19 * * *', { timeZone: 'America/Sao_Paulo' })
   async handleCron() {
     this.logger.debug('Job para lidar com status openToAnswer executando.');
 
@@ -72,7 +72,7 @@ export class CronService {
     }
   }
 
-  @Cron('0 00 * * 1')
+  @Cron('0 00 * * 1', { timeZone: 'America/Sao_Paulo' })
   async handleDeleteForm() {
     this.logger.debug('Rotina de expurgo de formulários sendo executada.');
 
@@ -86,7 +86,7 @@ export class CronService {
     }
   }
 
-  @Cron('10 19 * * 0,1,2,3,4,5')
+  @Cron('10 19 * * 0,1,2,3,4,5', { timeZone: 'America/Sao_Paulo' })
   async handleSendFormResult() {
     this.logger.debug('Rotina para envio de respostas aos gestores.');
 
