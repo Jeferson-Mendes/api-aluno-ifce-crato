@@ -8,6 +8,7 @@ import { RefectoryStatusEnum } from 'src/ts/enums';
 import { RefectoryService } from '../refectory/refectory.service';
 import { MailService } from '../mail/mail.service';
 import { format } from 'date-fns';
+import { changeTimeZone } from 'src/helpers';
 
 @Injectable()
 export class CronService {
@@ -32,7 +33,7 @@ export class CronService {
     // 00 -> Checa se existe form 'open' para fechar
     // 00 -> Checa se existe form agendado, e passa a aceitar respostas
 
-    const date = new Date();
+    const date = changeTimeZone(new Date());
     try {
       await this.refectoryModel.updateOne(
         { status: 'open', vigencyDate: { $lte: date } },
