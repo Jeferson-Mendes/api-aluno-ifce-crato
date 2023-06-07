@@ -6,7 +6,11 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose from 'mongoose';
-import { mountPaginationAttribute, resetTime } from 'src/helpers';
+import {
+  changeTimeZone,
+  mountPaginationAttribute,
+  resetTime,
+} from 'src/helpers';
 import ServerError from 'src/shared/errors/ServerError';
 import {
   PaginationResponseType,
@@ -442,9 +446,12 @@ export class RefectoryService {
         throw new BadRequestException('Duplicated vigency date provided');
       }
 
-      const compareDate = isAfter(new Date(), formObj.vigencyDate);
+      const compareDate = isAfter(
+        changeTimeZone(new Date()),
+        formObj.vigencyDate,
+      );
       const compareStartAnswerDate = isAfter(
-        new Date(),
+        changeTimeZone(new Date()),
         formObj.startAnswersDate,
       );
 
@@ -452,7 +459,7 @@ export class RefectoryService {
         throw new BadRequestException('Some provided vigency date is invalid');
       }
 
-      if (differenceInHours(vigencyDate, new Date()) <= 5) {
+      if (differenceInHours(vigencyDate, changeTimeZone(new Date())) <= 5) {
         throw new BadRequestException(
           'Some provided vigency date with insufficient time to answer',
         );
@@ -525,10 +532,10 @@ export class RefectoryService {
     startAnswersDate: Date,
   ): boolean {
     const closing =
-      isBefore(new Date(closingDate), new Date()) ||
+      isBefore(new Date(closingDate), changeTimeZone(new Date())) ||
       isAfter(new Date(closingDate), new Date(vigencyDate));
     const startAnswer =
-      isBefore(new Date(startAnswersDate), new Date()) ||
+      isBefore(new Date(startAnswersDate), changeTimeZone(new Date())) ||
       isAfter(new Date(startAnswersDate), new Date(closingDate));
 
     if (closing || startAnswer) return false;
@@ -568,7 +575,10 @@ export class RefectoryService {
       throw new ForbiddenException('This refectory already is open.');
     }
 
-    const compareDate = isAfter(new Date(), new Date(formatedVigencyDate));
+    const compareDate = isAfter(
+      changeTimeZone(new Date()),
+      new Date(formatedVigencyDate),
+    );
 
     if (compareDate) {
       throw new BadRequestException('The provided vigency date is invalid.');
@@ -580,7 +590,9 @@ export class RefectoryService {
       ? subDays(new Date(updateData.vigencyDate), 1)
       : new Date(refectoryRecord.startAnswersDate);
 
-    if (isAfter(new Date(), new Date(updateData.startAnswersDate))) {
+    if (
+      isAfter(changeTimeZone(new Date()), new Date(updateData.startAnswersDate))
+    ) {
       updateData.status = RefectoryStatusEnum.openToAnswer;
     }
 

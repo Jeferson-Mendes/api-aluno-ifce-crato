@@ -13,7 +13,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import ApiFeatures from 'src/utils/apiFeatures';
 import { MailService } from '../mail/mail.service';
-import { generateCode } from '../helpers';
+import { changeTimeZone, generateCode } from '../helpers';
 import {
   ConfirmEmailCodeDto,
   LoginDto,
@@ -133,7 +133,7 @@ export class AuthService {
 
     const dateToCompare = addMinutes(user.updatedAt, 10);
 
-    if (isAfter(new Date(), dateToCompare)) {
+    if (isAfter(changeTimeZone(new Date()), dateToCompare)) {
       throw new BadRequestException('Expired code');
     }
 
