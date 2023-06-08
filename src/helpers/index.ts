@@ -29,21 +29,7 @@ export const resetTime = (date: Date) => {
   return date;
 };
 
-export const changeTimeZone = (
-  date: Date | string,
-  options = { locale: 'pt-BR', timeZone: 'America/Sao_Paulo' },
-) => {
-  if (typeof date === 'string') {
-    return new Date(
-      new Date(date).toLocaleString(options.locale, {
-        timeZone: options.timeZone,
-      }),
-    );
-  }
-
-  return new Date(
-    date.toLocaleString(options.locale, {
-      timeZone: options.timeZone,
-    }),
-  );
+export const changeTimeZone = (date: Date, utcToSubtract = 3): Date => {
+  date.setUTCHours(date.getUTCHours() - utcToSubtract);
+  return date;
 };
