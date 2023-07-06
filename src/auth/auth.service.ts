@@ -65,7 +65,9 @@ export class AuthService {
     signUpDto: SignUpDto,
     file?: Express.Multer.File,
   ): Promise<User> {
-    const { password, email } = signUpDto;
+    const { password } = signUpDto;
+    const email = signUpDto.email.toLowerCase();
+
     let fileToStorage = null;
     const resourceData = {
       avatarUrl: '',
@@ -97,6 +99,7 @@ export class AuthService {
       }
       const user = await this.userModel.create({
         ...signUpDto,
+        email,
         password: hashedPassword,
         emailCode,
         ...resourceData,
