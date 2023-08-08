@@ -122,7 +122,7 @@ export class AuthService {
   ): Promise<{ user: User; token: string }> {
     const user: any = await this.userModel
       .findOne({
-        email: confirmEmailCodeDto.email,
+        email: confirmEmailCodeDto.email.toLowerCase(),
       })
       .select('+emailCode');
 
@@ -158,7 +158,9 @@ export class AuthService {
   async resendEmailConfirmationCode(
     resendEmailCode: ResendEmailConfirmationCodeDto,
   ): Promise<void> {
-    const user = await this.userModel.findOne({ email: resendEmailCode.email });
+    const user = await this.userModel.findOne({
+      email: resendEmailCode.email.toLowerCase(),
+    });
 
     if (!user || user.isActive) {
       throw new NotFoundException('User not found or already is active');
@@ -185,7 +187,9 @@ export class AuthService {
   }
 
   async sendForgotPasswordEmail(email: string): Promise<void> {
-    const userEmailExists = await this.userModel.findOne({ email });
+    const userEmailExists = await this.userModel.findOne({
+      email: email.toLowerCase(),
+    });
 
     if (!userEmailExists) {
       throw new NotFoundException('User not found.');
@@ -196,7 +200,10 @@ export class AuthService {
     await this.userResetPassModel.deleteMany({ user: userEmailExists._id });
     await this.userResetPassModel.create({ code, user: userEmailExists._id });
 
-    return await this.mailService.sendForgotPassword({ code, to: email });
+    return await this.mailService.sendForgotPassword({
+      code,
+      to: email.toLowerCase(),
+    });
   }
 
   async resetPassword(resetPassDto: ResetPassDto): Promise<User> {
