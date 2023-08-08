@@ -236,8 +236,8 @@ export class AuthService {
 
   // Login
   async login(loginDto: LoginDto): Promise<{ user: User; token: string }> {
-    const { email, password } = loginDto;
-
+    const { password } = loginDto;
+    const email = loginDto.email.toLowerCase();
     const user = await this.userModel.findOne({ email }).select('+password');
 
     if (!user) {
